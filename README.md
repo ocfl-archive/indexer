@@ -7,8 +7,8 @@ of the identification cascade.
 Validation of Mediafiles with ffmpeg and imagemagick is supported too.
 
 ## Installation
-    go get github.com/je4/indexer
-    go build github.com/je4/indexer/cmd/identify
+    go get github.com/ocfl-archive/indexer
+    go build github.com/ocfl-archive/indexer/cmd/identify
     
 ## Usage
 ### Start service

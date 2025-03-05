@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/je4/indexer/v3/pkg/indexer"
+	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 	"github.com/phayes/freeport"
 	"io"
 	"log"

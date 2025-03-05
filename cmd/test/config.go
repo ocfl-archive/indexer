@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	"github.com/je4/filesystem/v3/pkg/vfsrw"
-	"github.com/je4/indexer/v3/pkg/indexer"
 	"github.com/je4/utils/v2/pkg/stashconfig"
+	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 	"log"
 	"os"
 	"os/user"

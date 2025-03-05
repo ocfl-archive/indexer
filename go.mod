@@ -1,4 +1,4 @@
-module github.com/je4/indexer/v3
+module github.com/ocfl-archive/indexer/v3
 
 go 1.24.0
 

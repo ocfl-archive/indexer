@@ -1,9 +1,9 @@
 package indexer
 
 import (
-	"github.com/je4/indexer/v3/internal"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	archiveerror "github.com/ocfl-archive/error/pkg/error"
+	"github.com/ocfl-archive/indexer/v3/internal"
 )
 
 var ErrorFactory = archiveerror.NewFactory("INDEXER")

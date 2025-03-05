@@ -2,7 +2,7 @@ package indexer
 
 import (
 	"encoding/xml"
-	"github.com/je4/indexer/v3/data"
+	"github.com/ocfl-archive/indexer/v3/data"
 )
 
 type MimeBase struct {

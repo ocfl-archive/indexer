@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 var waiter sync.WaitGroup
@@ -45,7 +46,7 @@ func csvWriteLine(csvWriter *csv.Writer, fData *fileData) error {
 	}
 	csvWriterlock.Lock()
 	defer csvWriterlock.Unlock()
-	return errors.WithStack(csvWriter.Write([]string{fData.Path, fData.Folder, fData.Basename, fmt.Sprintf("%v", fData.Indexer.Size), dupStr, fData.Indexer.Mimetype, fData.Indexer.Pronom, fData.Indexer.Type, fData.Indexer.Subtype, fData.Indexer.Checksum[string(checksum.DigestSHA512)], fmt.Sprintf("%v", fData.Indexer.Width), fmt.Sprintf("%v", fData.Indexer.Height), fmt.Sprintf("%v", fData.Indexer.Duration)}))
+	return errors.WithStack(csvWriter.Write([]string{fData.Path, fData.Folder, fData.Basename, fmt.Sprintf("%v", fData.Indexer.Size), time.Unix(fData.LastMod, 0).Format(time.DateTime), dupStr, fData.Indexer.Mimetype, fData.Indexer.Pronom, fData.Indexer.Type, fData.Indexer.Subtype, fData.Indexer.Checksum[string(checksum.DigestSHA512)], fmt.Sprintf("%v", fData.Indexer.Width), fmt.Sprintf("%v", fData.Indexer.Height), fmt.Sprintf("%v", fData.Indexer.Duration)}))
 }
 
 func writeConsole(fData *fileData, id uint, basePath string, cached bool) {
@@ -84,6 +85,7 @@ type fileData struct {
 	Basename  string            `json:"basename"`
 	Size      int64             `json:"size"`
 	Duplicate bool              `json:"duplicate"`
+	LastMod   int64             `json:"lastmod"`
 	Indexer   *indexer.ResultV2 `json:"indexer"`
 	LastSeen  int64             `json:"lastseen"`
 }
@@ -175,6 +177,7 @@ func worker(id uint, fsys fs.FS, idx *util.Indexer, logger zLogger.ZLogger, jobs
 				filepath.Base(path),
 				int64(r.Size),
 				dup,
+				finfo.ModTime().Unix(),
 				r,
 				startTime,
 			}

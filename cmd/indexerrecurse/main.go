@@ -87,7 +87,7 @@ func main() {
 
 		csvWriter = csv.NewWriter(csvOutfile)
 		defer csvWriter.Flush()
-		csvWriter.Write([]string{"path", "folder", "basename", "size", "duplicate", "mimetype", "pronom", "type", "subtype", "checksum", "width", "height", "duration"})
+		csvWriter.Write([]string{"path", "folder", "basename", "size", "lastmod", "duplicate", "mimetype", "pronom", "type", "subtype", "checksum", "width", "height", "duration"})
 	}
 
 	var loggerTLSConfig *tls.Config

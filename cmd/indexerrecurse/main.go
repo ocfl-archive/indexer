@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -36,6 +37,8 @@ var concurrentFlag = flag.Uint("n", 3, "number of concurrent workers")
 var actionsFlag = flag.String("actions", "", "comma separated actions to perform")
 var emptyFlag = flag.Bool("empty", false, "show empty files")
 var duplicateFlag = flag.Bool("duplicate", false, "show duplicate files")
+var baseNameFlag = flag.String("basename", "", "go regexp of basename to search for")
+var removeFlag = flag.Bool("remove", false, "remove all found files")
 
 func main() {
 	flag.Parse()
@@ -64,6 +67,7 @@ func main() {
 	var csvOutfile io.WriteCloser
 	var csvWriter *csv.Writer
 	var badgerDB *badger.DB
+	var baseNameRegexp *regexp.Regexp
 	if *badgerFlag != "" {
 		fi, err := os.Stat(*badgerFlag)
 		if err != nil {
@@ -88,6 +92,12 @@ func main() {
 		csvWriter = csv.NewWriter(csvOutfile)
 		defer csvWriter.Flush()
 		csvWriter.Write([]string{"path", "folder", "basename", "size", "lastmod", "duplicate", "mimetype", "pronom", "type", "subtype", "checksum", "width", "height", "duration"})
+	}
+	if *baseNameFlag != "" {
+		baseNameRegexp, err = regexp.Compile(*baseNameFlag)
+		if err != nil {
+			log.Fatalf("cannot compile basename regexp '%s': %v", *baseNameFlag, err)
+		}
 	}
 
 	var loggerTLSConfig *tls.Config
@@ -121,10 +131,34 @@ func main() {
 	l2 := _logger.With().Timestamp().Str("host", hostname).Logger() //.Output(output)
 	var logger zLogger.ZLogger = &l2
 
-	if *emptyFlag || *duplicateFlag {
-		if *folder != "" {
+	if *emptyFlag || *duplicateFlag || baseNameRegexp != nil {
+		if *folder != "" && !(*removeFlag) {
 			logger.Fatal().Msg("cannot use -empty or -duplicate with -path")
 			return
+		}
+		var dirFS fs.FS
+		if *removeFlag && *folder == "" {
+			logger.Fatal().Msg("need -path to remove files")
+			return
+		}
+		if *folder != "" && *removeFlag {
+			if strings.HasPrefix(*folder, "./") {
+				currDir, err := os.Getwd()
+				if err != nil {
+					panic(fmt.Errorf("cannot get working directory: %v", err))
+				}
+				*folder = filepath.Join(currDir, *folder)
+			}
+			fi, err := os.Stat(*folder)
+			if err != nil {
+				logger.Fatal().Err(err).Msgf("cannot stat folder %s", *folder)
+				return
+			}
+			if !fi.IsDir() {
+				logger.Fatal().Msgf("%s is not a directory", *folder)
+				return
+			}
+			dirFS = os.DirFS(*folder)
 		}
 
 		if badgerDB == nil {
@@ -144,12 +178,23 @@ func main() {
 					if err := json.Unmarshal(v, fData); err != nil {
 						return errors.Wrapf(err, "cannot unmarshal value")
 					}
-					if (*emptyFlag && fData.Size == 0) || (*duplicateFlag && fData.Duplicate) {
+					var baseNameFit bool
+					if baseNameRegexp != nil {
+						baseNameFit = baseNameRegexp.MatchString(fData.Basename)
+					}
+					if (*emptyFlag && fData.Size == 0) || (*duplicateFlag && fData.Duplicate) || (baseNameFit) {
 						if csvWriter != nil {
 							csvWriteLine(csvWriter, fData)
 						}
 						if jsonlOutfile != nil {
 							jsonlWriteLine(jsonlOutfile, fData)
+						}
+						if *removeFlag && dirFS != nil {
+							fullpath := filepath.Join(*folder, fData.Path)
+							logger.Info().Msgf("removing %s", fullpath)
+							if err := os.Remove(fullpath); err != nil {
+								logger.Error().Err(err).Str("folder", fData.Folder).Str("basename", fData.Basename).Msg("cannot remove file")
+							}
 						}
 					}
 					writeConsole(fData, 0, "./", true)

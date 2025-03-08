@@ -137,3 +137,12 @@ regexpMimeMetaNot = "^(image|video|audio)/.*$"
 online = true
 enabled = false
 
+[log]
+# "trace"
+# "debug"
+# "info"
+# "warn"
+# "error"
+# "fatal"
+# "panic"
+level = "info"

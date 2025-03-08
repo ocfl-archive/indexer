@@ -18,81 +18,7 @@ import (
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 	"log"
 	"os"
-	"os/user"
-	"path/filepath"
-	"time"
 )
-
-type duration struct {
-	Duration time.Duration
-}
-
-func (d *duration) UnmarshalText(text []byte) error {
-	var err error
-	d.Duration, err = time.ParseDuration(string(text))
-	return err
-}
-
-type ConfigClamAV struct {
-	Enabled  bool
-	Timeout  duration
-	ClamScan string
-	Wsl      bool
-}
-
-type ConfigSiegfried struct {
-	//Address string
-	Enabled       bool
-	SignatureFile string
-	MimeMap       map[string]string
-}
-
-type ConfigTika struct {
-	Address       string
-	Timeout       duration
-	RegexpMime    string
-	RegexpMimeNot string
-	Online        bool
-	Enabled       bool
-}
-
-type FFMPEGMime struct {
-	Video  bool
-	Audio  bool
-	Format string
-	Mime   string
-}
-
-type ConfigFFMPEG struct {
-	FFProbe string
-	Wsl     bool
-	Timeout duration
-	Online  bool
-	Enabled bool
-	Mime    []FFMPEGMime
-}
-
-type ConfigImageMagick struct {
-	Identify string
-	Convert  string
-	Wsl      bool
-	Timeout  duration
-	Online   bool
-	Enabled  bool
-}
-
-type ExternalAction struct {
-	Name,
-	Address,
-	Mimetype string
-	ActionCapabilities []indexer.ActionCapability
-	CallType           indexer.ExternalActionCalltype
-}
-
-type FileMap struct {
-	Alias  string
-	Folder string
-}
 
 type SFTP struct {
 	Knownhosts string
@@ -100,57 +26,27 @@ type SFTP struct {
 	PrivateKey []string
 }
 
-type ConfigNSRL struct {
-	Enabled bool
-	Badger  string
-}
-
-type MimeWeight struct {
-	Regexp string
-	Weight int
-}
-
 type Config struct {
-	ErrorTemplate   string
-	Logfile         string
-	Loglevel        string
-	LogFormat       string
-	AccessLog       string
-	CertPEM         string
-	KeyPEM          string
-	Addr            string
-	JwtKey          string
-	InsecureCert    bool
-	JwtAlg          []string
-	TempDir         string
-	HeaderTimeout   duration
-	HeaderSize      int64
-	DownloadMime    string `toml:"forcedownload"`
-	MaxDownloadSize int64
-	Siegfried       ConfigSiegfried
-	FFMPEG          ConfigFFMPEG
-	ImageMagick     ConfigImageMagick
-	Tika            ConfigTika
-	External        []ExternalAction
-	FileMap         []FileMap
-	SFTP            SFTP
-	URLRegexp       []string
-	NSRL            ConfigNSRL
-	Clamav          ConfigClamAV
-	MimeRelevance   map[string]MimeWeight
+	ErrorTemplate string
+	Logfile       string
+	Loglevel      string
+	LogFormat     string
+	AccessLog     string
+	CertPEM       string
+	KeyPEM        string
+	Addr          string
+	JwtKey        string
+	InsecureCert  bool
+	JwtAlg        []string
+	SFTP          SFTP
+	Indexer       *indexer.IndexerConfig
 }
 
 func LoadConfig(fp string) *Config {
-	user, err := user.Current()
-	if err != nil {
-		log.Fatalln("cannot get current user", err)
-	}
 	var conf = &Config{
 		LogFormat:    `%{time:2006-01-02T15:04:05.000} %{shortpkg}::%{longfunc} [%{shortfile}] > %{level:.5s} - %{message}`,
 		InsecureCert: false,
-		Siegfried: ConfigSiegfried{
-			SignatureFile: filepath.Join(user.HomeDir, "siegfried", "default.sig"),
-		},
+		Indexer:      indexer.GetDefaultConfig(),
 	}
 
 	if _, err := toml.DecodeFile(fp, conf); err != nil {

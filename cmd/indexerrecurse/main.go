@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/je4/utils/v2/pkg/checksum"
+	"github.com/dgraph-io/badger/v4"
+	badgerOptions "github.com/dgraph-io/badger/v4/options"
 	"github.com/je4/utils/v2/pkg/zLogger"
-	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 	"github.com/ocfl-archive/indexer/v3/pkg/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
@@ -21,9 +21,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
-	"sync"
+	"time"
 )
 
 //go:embed minimal.toml
@@ -32,69 +31,11 @@ var configToml []byte
 var folder = flag.String("path", "", "path to iterate")
 var jsonFlag = flag.String("json", "", "json file to write")
 var csvFlag = flag.String("csv", "", "csv file to write")
+var badgerFlag = flag.String("db", "", "badger db folder to use")
 var concurrentFlag = flag.Uint("n", 3, "number of concurrent workers")
 var actionsFlag = flag.String("actions", "", "comma separated actions to perform")
-
-var waiter sync.WaitGroup
-
-var serialWriterLock sync.Mutex
-
-func serialWriteLine(w io.Writer, d []byte) error {
-	serialWriterLock.Lock()
-	defer serialWriterLock.Unlock()
-	if _, err := w.Write(append(d, []byte("\n")...)); err != nil {
-		return errors.Wrapf(err, "cannot write to output")
-	}
-	return nil
-}
-
-func worker(id uint, fsys fs.FS, idx *util.Indexer, logger zLogger.ZLogger, jobs <-chan string, results chan<- string, jsonlWriter io.Writer, csvWriter *csv.Writer) {
-	for path := range jobs {
-		fmt.Println("worker", id, "processing job", path)
-		actions := []string{"siegfried", "xml"} // , "identify", "ffprobe", "tika"
-		if *actionsFlag != "" {
-			for _, a := range strings.Split(*actionsFlag, ",") {
-				a = strings.ToLower(strings.TrimSpace(a))
-				if a != "" {
-					actions = append(actions, a)
-				}
-			}
-		}
-		slices.Sort(actions)
-		actions = slices.Compact(actions)
-		r, cs, err := idx.Index(fsys, path, "", actions, []checksum.DigestAlgorithm{checksum.DigestSHA512}, io.Discard, logger)
-		if err != nil {
-			logger.Error().Err(err).Msgf("cannot index (%s)%s", fsys, path)
-			waiter.Done()
-			return
-		}
-		fmt.Printf("#%03d: %s/%s\n           [%s] - %s\n", id, fsys, path, r.Mimetype, cs[checksum.DigestSHA512])
-		if r.Type == "image" {
-			fmt.Printf("#           image: %vx%v", r.Width, r.Height)
-		}
-		if jsonlWriter != nil {
-			outStruct := struct {
-				Path     string            `json:"path"`
-				Folder   string            `json:"folder"`
-				Basename string            `json:"basename"`
-				Indexer  *indexer.ResultV2 `json:"indexer"`
-			}{path, filepath.Dir(path), filepath.Base(path), r}
-			data, err := json.Marshal(outStruct)
-			if err != nil {
-				logger.Error().Err(err).Msgf("cannot marshal result")
-			} else {
-				if err := serialWriteLine(jsonlWriter, data); err != nil {
-					logger.Error().Err(err).Msgf("cannot write to output")
-				}
-			}
-		}
-		if csvWriter != nil {
-			csvWriter.Write([]string{path, filepath.Dir(path), filepath.Base(path), fmt.Sprintf("%v", r.Size), r.Mimetype, r.Pronom, r.Type, r.Subtype, cs[checksum.DigestSHA512], fmt.Sprintf("%v", r.Width), fmt.Sprintf("%v", r.Height), fmt.Sprintf("%v", r.Duration)})
-		}
-		results <- path + " done"
-		waiter.Done()
-	}
-}
+var emptyFlag = flag.Bool("empty", false, "show empty files")
+var duplicateFlag = flag.Bool("duplicate", false, "show duplicate files")
 
 func main() {
 	flag.Parse()
@@ -122,6 +63,21 @@ func main() {
 	}
 	var csvOutfile io.WriteCloser
 	var csvWriter *csv.Writer
+	var badgerDB *badger.DB
+	if *badgerFlag != "" {
+		fi, err := os.Stat(*badgerFlag)
+		if err != nil {
+			log.Fatalf("cannot stat badger db folder: %v", err)
+		}
+		if !fi.IsDir() {
+			log.Fatalf("badger db folder is not a directory: %v", err)
+		}
+		badgerDB, err = badger.Open(badger.DefaultOptions(*badgerFlag).WithCompression(badgerOptions.Snappy))
+		if err != nil {
+			log.Fatalf("cannot open badger db: %v", err)
+		}
+		defer badgerDB.Close()
+	}
 	if *csvFlag != "" {
 		csvOutfile, err = os.Create(*csvFlag)
 		if err != nil {
@@ -131,7 +87,7 @@ func main() {
 
 		csvWriter = csv.NewWriter(csvOutfile)
 		defer csvWriter.Flush()
-		csvWriter.Write([]string{"path", "folder", "basename", "size", "mimetype", "pronom", "type", "subtype", "checksum", "width", "height", "duration"})
+		csvWriter.Write([]string{"path", "folder", "basename", "size", "duplicate", "mimetype", "pronom", "type", "subtype", "checksum", "width", "height", "duration"})
 	}
 
 	var loggerTLSConfig *tls.Config
@@ -165,6 +121,52 @@ func main() {
 	l2 := _logger.With().Timestamp().Str("host", hostname).Logger() //.Output(output)
 	var logger zLogger.ZLogger = &l2
 
+	if *emptyFlag || *duplicateFlag {
+		if *folder != "" {
+			logger.Fatal().Msg("cannot use -empty or -duplicate with -path")
+			return
+		}
+
+		if badgerDB == nil {
+			logger.Fatal().Msg("need badger db to show empty files (-db)")
+			return
+		}
+		if err := badgerDB.View(func(txn *badger.Txn) error {
+			opts := badger.DefaultIteratorOptions
+			opts.PrefetchValues = true
+			it := txn.NewIterator(opts)
+			defer it.Close()
+			for it.Rewind(); it.Valid(); it.Next() {
+				item := it.Item()
+				k := item.Key()
+				err := item.Value(func(v []byte) error {
+					fData := &fileData{}
+					if err := json.Unmarshal(v, fData); err != nil {
+						return errors.Wrapf(err, "cannot unmarshal value")
+					}
+					if (*emptyFlag && fData.Size == 0) || (*duplicateFlag && fData.Duplicate) {
+						if csvWriter != nil {
+							csvWriteLine(csvWriter, fData)
+						}
+						if jsonlOutfile != nil {
+							jsonlWriteLine(jsonlOutfile, fData)
+						}
+					}
+					writeConsole(fData, 0, "./", true)
+					logger.Info().Str("key", string(k)).Msg("key")
+					return nil
+				})
+				if err != nil {
+					return errors.Wrapf(err, "cannot read value")
+				}
+			}
+			return nil
+		}); err != nil {
+			logger.Error().Err(err).Msg("cannot read badger db")
+		}
+		return
+	}
+
 	idx, err := util.InitIndexer(conf.Indexer, logger)
 	if err != nil {
 		panic(fmt.Errorf("cannot init indexer: %v", err))
@@ -183,15 +185,18 @@ func main() {
 	dirFS := os.DirFS(*folder)
 	//zipFS, err := zipasfolder.NewFS(dirFS, 10, true, logger)
 	zipFS := dirFS
-	if err != nil {
-		panic(fmt.Errorf("cannot create zip as folder FS: %v", err))
-	}
+	/*
+		if err != nil {
+			panic(fmt.Errorf("cannot create zip as folder FS: %v", err))
+		}
+	*/
 
 	jobs := make(chan string, 100)
 	results := make(chan string, 100)
 
+	startTime := time.Now().Unix()
 	for w := uint(1); w <= *concurrentFlag; w++ {
-		go worker(w, zipFS, idx, logger, jobs, results, jsonlOutfile, csvWriter)
+		go worker(w, zipFS, idx, logger, jobs, results, jsonlOutfile, csvWriter, badgerDB, startTime)
 	}
 
 	go func() {

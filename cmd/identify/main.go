@@ -158,21 +158,21 @@ func main() {
 		//return
 	}
 
-	if config.Siegfried.Enabled {
-		if _, err := os.Stat(config.Siegfried.SignatureFile); err != nil {
-			log.Panicf("siegfried signature file at %s not found. Please use 'sf -update' to download it: %v", config.Siegfried.SignatureFile, err)
+	if config.Indexer.Siegfried.Enabled {
+		if _, err := os.Stat(config.Indexer.Siegfried.SignatureFile); err != nil {
+			log.Panicf("siegfried signature file at %s not found. Please use 'sf -update' to download it: %v", config.Indexer.Siegfried.SignatureFile, err)
 		}
-		signatureData, err := os.ReadFile(config.Siegfried.SignatureFile)
+		signatureData, err := os.ReadFile(config.Indexer.Siegfried.SignatureFile)
 		if err != nil {
-			log.Panicf("cannot read signature file at %s: %v", config.Siegfried.SignatureFile, err)
+			log.Panicf("cannot read signature file at %s: %v", config.Indexer.Siegfried.SignatureFile, err)
 		}
-		indexer.NewActionSiegfried("siegfried", signatureData, config.Siegfried.MimeMap, srv, ad)
+		indexer.NewActionSiegfried("siegfried", signatureData, config.Indexer.Siegfried.MimeMap, config.Indexer.Siegfried.T, srv, ad)
 		//srv.AddActions(sf)
 	}
 
-	if config.FFMPEG.Enabled {
+	if config.Indexer.FFMPEG.Enabled {
 		var ffmpegmime []indexer.FFMPEGMime
-		for _, val := range config.FFMPEG.Mime {
+		for _, val := range config.Indexer.FFMPEG.Mime {
 			ffmpegmime = append(ffmpegmime, indexer.FFMPEGMime{
 				Video:  val.Video,
 				Audio:  val.Audio,
@@ -180,29 +180,29 @@ func main() {
 				Mime:   val.Mime,
 			})
 		}
-		indexer.NewActionFFProbe("ffprobe", config.FFMPEG.FFProbe, config.FFMPEG.Wsl, config.FFMPEG.Timeout.Duration, config.FFMPEG.Online, ffmpegmime, srv, ad)
+		indexer.NewActionFFProbe("ffprobe", config.Indexer.FFMPEG.FFProbe, config.Indexer.FFMPEG.Wsl, config.Indexer.FFMPEG.Timeout.Duration, config.Indexer.FFMPEG.Online, ffmpegmime, srv, ad)
 	}
 
-	if config.ImageMagick.Enabled {
-		indexer.NewActionIdentify("identify", config.ImageMagick.Identify, config.ImageMagick.Convert, config.ImageMagick.Wsl, config.ImageMagick.Timeout.Duration, config.ImageMagick.Online, srv, ad)
-		indexer.NewActionIdentifyV2("identify2", config.ImageMagick.Identify, config.ImageMagick.Convert, config.ImageMagick.Wsl, config.ImageMagick.Timeout.Duration, config.ImageMagick.Online, srv, ad)
+	if config.Indexer.ImageMagick.Enabled {
+		indexer.NewActionIdentify("identify", config.Indexer.ImageMagick.Identify, config.Indexer.ImageMagick.Convert, config.Indexer.ImageMagick.Wsl, config.Indexer.ImageMagick.Timeout.Duration, config.Indexer.ImageMagick.Online, srv, ad)
+		indexer.NewActionIdentifyV2("identify2", config.Indexer.ImageMagick.Identify, config.Indexer.ImageMagick.Convert, config.Indexer.ImageMagick.Wsl, config.Indexer.ImageMagick.Timeout.Duration, config.Indexer.ImageMagick.Online, srv, ad)
 	}
 
-	if config.Tika.Enabled {
-		indexer.NewActionTika("tika", config.Tika.Address, config.Tika.Timeout.Duration, config.Tika.RegexpMime, config.Tika.RegexpMimeNot, "", config.Tika.Online, srv, ad)
+	if config.Indexer.Tika.Enabled {
+		indexer.NewActionTika("tika", config.Indexer.Tika.Address, config.Indexer.Tika.Timeout.Duration, config.Indexer.Tika.RegexpMime, config.Indexer.Tika.RegexpMimeNot, "", config.Indexer.Tika.Online, srv, ad)
 		//srv.AddActions(tika)
 	}
 
-	if config.Clamav.Enabled {
+	if config.Indexer.Clamav.Enabled {
 		indexer.NewActionClamAV(
-			config.Clamav.ClamScan,
-			config.Clamav.Wsl,
-			config.Clamav.Timeout.Duration,
+			config.Indexer.Clamav.ClamScan,
+			config.Indexer.Clamav.Wsl,
+			config.Indexer.Clamav.Timeout.Duration,
 			srv,
 			ad)
 	}
 
-	for _, eaconfig := range config.External {
+	for _, eaconfig := range config.Indexer.External {
 		var caps uint
 		for _, c := range eaconfig.ActionCapabilities {
 			caps |= uint(c)

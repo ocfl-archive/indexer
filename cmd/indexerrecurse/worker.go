@@ -46,7 +46,23 @@ func csvWriteLine(csvWriter *csv.Writer, fData *fileData) error {
 	}
 	csvWriterlock.Lock()
 	defer csvWriterlock.Unlock()
-	return errors.WithStack(csvWriter.Write([]string{fData.Path, fData.Folder, fData.Basename, fmt.Sprintf("%v", fData.Indexer.Size), time.Unix(fData.LastMod, 0).Format(time.DateTime), dupStr, fData.Indexer.Mimetype, fData.Indexer.Pronom, fData.Indexer.Type, fData.Indexer.Subtype, fData.Indexer.Checksum[string(checksum.DigestSHA512)], fmt.Sprintf("%v", fData.Indexer.Width), fmt.Sprintf("%v", fData.Indexer.Height), fmt.Sprintf("%v", fData.Indexer.Duration)}))
+	return errors.WithStack(csvWriter.Write(
+		[]string{
+			fData.Path,
+			fData.Folder,
+			fData.Basename,
+			fmt.Sprintf("%v", fData.Indexer.Size),
+			time.Unix(fData.LastMod, 0).Format(time.RFC3339),
+			dupStr,
+			fData.Indexer.Mimetype,
+			fData.Indexer.Pronom,
+			fData.Indexer.Type,
+			fData.Indexer.Subtype,
+			fData.Indexer.Checksum[string(checksum.DigestSHA512)],
+			fmt.Sprintf("%v", fData.Indexer.Width),
+			fmt.Sprintf("%v", fData.Indexer.Height),
+			fmt.Sprintf("%v", fData.Indexer.Duration),
+		}))
 }
 
 func writeConsole(fData *fileData, id uint, basePath string, cached bool) {
@@ -142,7 +158,11 @@ func worker(id uint, fsys fs.FS, idx *util.Indexer, logger zLogger.ZLogger, jobs
 			if err != nil {
 				logger.Error().Err(err).Msgf("cannot read from badger db")
 			} else {
-				fromCache = true
+				if fData.Size != finfo.Size() || fData.LastMod != finfo.ModTime().Unix() {
+					fData = nil
+				} else {
+					fromCache = true
+				}
 			}
 		}
 

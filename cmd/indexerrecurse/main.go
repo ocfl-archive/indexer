@@ -154,7 +154,7 @@ func main() {
 			logger.Fatal().Err(err).Msg("cannot build path")
 			return
 		}
-		for name, newName := range pathElements.ClearViewIterator {
+		for name, newName := range pathElements.ClearIterator {
 			fmt.Printf("%s\n--> %s\n", name, newName)
 		}
 		return

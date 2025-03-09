@@ -21,6 +21,7 @@ var directCleanRule_1_5 = regexp.MustCompile("[\u0000-\u001F\u007F\n\r\t*?:\"<>|
 // var directCleanRule_2_4_6 = regexp.MustCompile("^[\\-~\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200f\u2028\u2029\u202f\u205f\u3000]*(.*?)[\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u20a0\u2028\u2029\u202f\u205f\u3000]*$")
 var directCleanRule_2_4_6 = regexp.MustCompile("^[~\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200f\u2028\u2029\u202f\u205f\u3000]*(.*?)[\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u20a0\u2028\u2029\u202f\u205f\u3000]*$")
 var directCleanRulePeriods = regexp.MustCompile("^\\.+$")
+var directCleanRulePrivateUse = regexp.MustCompile("[\uF0000-\uFFFFD\u100000-\u10FFFD\uE000-\uF8FF]")
 
 func min[T constraints.Ordered](a, b T) T {
 	if a < b {
@@ -65,6 +66,7 @@ func build(fname string, utfEncode bool) string {
 		} else {
 			//n = directCleanRuleWhitespace.ReplaceAllString(n, whitespaceReplacementString)
 			n = directCleanRule_1_5.ReplaceAllString(n, replacementString)
+			n = directCleanRulePrivateUse.ReplaceAllString(n, replacementString)
 			n = directCleanRule_2_4_6.ReplaceAllString(n, "$1")
 			if directCleanRulePeriods.MatchString(n) {
 				n = replacementString + n[1:]

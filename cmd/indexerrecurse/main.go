@@ -39,6 +39,7 @@ var emptyFlag = flag.Bool("empty", false, "show empty files")
 var duplicateFlag = flag.Bool("duplicate", false, "show duplicate files")
 var baseNameFlag = flag.String("basename", "", "go regexp of basename to search for")
 var removeFlag = flag.Bool("remove", false, "remove all found files")
+var clearPathFlag = flag.Bool("clear", false, "clear path")
 
 func main() {
 	flag.Parse()
@@ -131,9 +132,36 @@ func main() {
 	l2 := _logger.With().Timestamp().Str("host", hostname).Logger() //.Output(output)
 	var logger zLogger.ZLogger = &l2
 
+	if *clearPathFlag {
+		if *emptyFlag || *duplicateFlag || baseNameRegexp != nil {
+			logger.Fatal().Msg("cannot use -clear with -empty or -duplicate or -basename")
+			return
+		}
+		if *folder == "" {
+			logger.Fatal().Msg("need -path to clear path")
+			return
+		}
+		if strings.HasPrefix(*folder, "./") {
+			currDir, err := os.Getwd()
+			if err != nil {
+				logger.Fatal().Err(err).Msg("cannot get working directory")
+			}
+			*folder = filepath.Join(currDir, *folder)
+		}
+		dirFS := os.DirFS(*folder)
+		pathElements, err := buildPath(dirFS)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("cannot build path")
+			return
+		}
+		for name, newName := range pathElements.ClearIterator {
+			fmt.Printf("%s\n--> %s\n", name, newName)
+		}
+		return
+	}
 	if *emptyFlag || *duplicateFlag || baseNameRegexp != nil {
-		if *folder != "" && !(*removeFlag) {
-			logger.Fatal().Msg("cannot use -empty or -duplicate with -path")
+		if *clearPathFlag {
+			logger.Fatal().Msg("cannot use -empty or -duplicate or -basename with -clear")
 			return
 		}
 		var dirFS fs.FS

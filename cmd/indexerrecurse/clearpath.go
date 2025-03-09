@@ -68,7 +68,7 @@ func build(fname string, utfEncode bool) string {
 		}
 
 		if len(n) > 0 {
-			n = strings.Trim(n, replacementString+whitespaceReplacementString)
+			n = strings.TrimRight(n, replacementString+whitespaceReplacementString)
 			if len(n) == 0 {
 				n = replacementString
 			}

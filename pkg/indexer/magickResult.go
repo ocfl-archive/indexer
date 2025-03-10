@@ -67,6 +67,7 @@ type MagickImage struct {
 	Quality           float64                  `json:"quality,omitempty"`
 	Orientation       string                   `json:"orientation,omitempty"`
 	Properties        map[string]any           `json:"properties,omitempty"`
+	Artifacts         map[string]any           `json:"artifacts,omitempty"`
 	Profiles          map[string]any           `json:"profiles,omitempty"`
 	Tainted           bool                     `json:"tainted,omitempty"`
 	Filesize          string                   `json:"filesize,omitempty"`

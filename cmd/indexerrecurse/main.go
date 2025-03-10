@@ -252,6 +252,7 @@ func main() {
 			logger.Fatal().Msg("need badger db to show empty files (-db)")
 			return
 		}
+		removedKeys := [][]byte{}
 		if err := badgerDB.View(func(txn *badger.Txn) error {
 			opts := badger.DefaultIteratorOptions
 			opts.PrefetchValues = true
@@ -281,6 +282,8 @@ func main() {
 							logger.Info().Msgf("removing %s", fullpath)
 							if err := os.Remove(fullpath); err != nil {
 								logger.Error().Err(err).Str("folder", fData.Folder).Str("basename", fData.Basename).Msg("cannot remove file")
+							} else {
+								removedKeys = append(removedKeys, k)
 							}
 						}
 					}
@@ -295,6 +298,18 @@ func main() {
 			return nil
 		}); err != nil {
 			logger.Error().Err(err).Msg("cannot read badger db")
+		}
+		if len(removedKeys) > 0 {
+			if err := badgerDB.Update(func(txn *badger.Txn) error {
+				for _, k := range removedKeys {
+					if err := txn.Delete(k); err != nil {
+						return errors.Wrapf(err, "cannot delete key")
+					}
+				}
+				return nil
+			}); err != nil {
+				logger.Error().Err(err).Msg("cannot delete keys")
+			}
 		}
 		return
 	}

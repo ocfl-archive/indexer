@@ -7,7 +7,7 @@ import (
 
 type floatString float64
 
-func (f *floatString) UnmarshalText(text []byte) error {
+func (f *floatString) UnmarshalJSON(text []byte) error {
 	text = bytes.Trim(text, " \"")
 	xf, err := strconv.ParseFloat(string(text), 64)
 	*f = floatString(xf)

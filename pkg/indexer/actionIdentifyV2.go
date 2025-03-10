@@ -215,7 +215,12 @@ func (ai *ActionIdentifyV2) DoV2(filename string) (*ResultV2, error) {
 	}
 
 	var meta = []*MagickResult{}
-	if err := json.Unmarshal([]byte(out.String()), &meta); err != nil {
+	data := out.String()
+
+	if data[0] == '{' {
+		data = "[" + data + "]"
+	}
+	if err := json.Unmarshal([]byte(data), &meta); err != nil {
 		return nil, errors.Wrapf(err, "cannot unmarshall metadata: %s", out.String())
 	}
 	if len(meta) == 0 {

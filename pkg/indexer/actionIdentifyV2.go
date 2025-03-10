@@ -141,8 +141,13 @@ func (ai *ActionIdentifyV2) Stream(contentType string, reader io.Reader, filenam
 	}
 
 	var meta = []*MagickResult{}
-	if err := json.Unmarshal([]byte(out.String()), &meta); err != nil {
-		return nil, errors.Wrapf(err, "cannot unmarshall metadata: %s", out.String())
+	data := out.String()
+
+	if data[0] == '{' {
+		data = "[" + data + "]"
+	}
+	if err := json.Unmarshal([]byte(data), &meta); err != nil {
+		return nil, errors.Wrapf(err, "cannot unmarshall metadata: %s", data)
 	}
 	if len(meta) == 0 {
 		return nil, errors.New("no metadata from imagemagick found")

@@ -16,7 +16,8 @@ var directCleanRuleWhitespace = regexp.MustCompile("[\u0009\u000a-\u000d\u0020\u
 var directCleanRuleEqual = regexp.MustCompile("=(u[a-zA-Z0-9]{4})")
 
 // var directCleanRule_1_5 = regexp.MustCompile("[\u0000-\u001F\u007F\n\r\t*?:\\[\\]\"<>|(){}&'!\\;#@]")
-var directCleanRule_1_5 = regexp.MustCompile("[\u0000-\u001F\u007F\n\r\t*?:\"<>|{}'!“”‘\\;#]")
+var directCleanRule_1_5 = regexp.MustCompile("[\u0000-\u001F\u007F\n\r\t*:<>|{}\\;#]")
+var directCleanQuotation = regexp.MustCompile("['“”‘]")
 
 // var directCleanRule_2_4_6 = regexp.MustCompile("^[\\-~\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200f\u2028\u2029\u202f\u205f\u3000]*(.*?)[\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u20a0\u2028\u2029\u202f\u205f\u3000]*$")
 var directCleanRule_2_4_6 = regexp.MustCompile("^[~\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200f\u2028\u2029\u202f\u205f\u3000]*(.*?)[\u0009\u000a-\u000d\u0020\u0085\u00a0\u1680\u2000-\u20a0\u2028\u2029\u202f\u205f\u3000]*$")
@@ -68,6 +69,7 @@ func build(fname string, utfEncode bool) string {
 			n = directCleanRule_1_5.ReplaceAllString(n, replacementString)
 			n = directCleanRulePrivateUse.ReplaceAllString(n, replacementString)
 			n = directCleanRule_2_4_6.ReplaceAllString(n, "$1")
+			n = directCleanQuotation.ReplaceAllString(n, "\"")
 			if directCleanRulePeriods.MatchString(n) {
 				n = replacementString + n[1:]
 			}

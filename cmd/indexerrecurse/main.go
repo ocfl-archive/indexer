@@ -166,7 +166,7 @@ func main() {
 		}
 		if *clearPathFlag {
 			for name, newName := range pathElements.ClearIterator {
-				fmt.Printf("%s\n--> %s\n", name, newName)
+				fmt.Printf("%s\n--> %s\n\n", name, newName)
 				if *renameFlag {
 					fullpath := filepath.Join(*folder, name)
 					newpath := filepath.Join(*folder, newName)

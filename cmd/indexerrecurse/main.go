@@ -38,6 +38,7 @@ var actionsFlag = flag.String("actions", "", "comma separated actions to perform
 var emptyFlag = flag.Bool("empty", false, "show empty files")
 var duplicateFlag = flag.Bool("duplicate", false, "show duplicate files")
 var baseNameFlag = flag.String("basename", "", "go regexp of basename to search for")
+var dirNameFlag = flag.String("dirname", "", "go regexp of dirname to search for")
 var removeFlag = flag.Bool("remove", false, "remove all found files")
 var clearPathFlag = flag.Bool("clear", false, "clear path")
 
@@ -69,6 +70,7 @@ func main() {
 	var csvWriter *csv.Writer
 	var badgerDB *badger.DB
 	var baseNameRegexp *regexp.Regexp
+	var dirNameRegexp *regexp.Regexp
 	if *badgerFlag != "" {
 		fi, err := os.Stat(*badgerFlag)
 		if err != nil {
@@ -98,6 +100,13 @@ func main() {
 		baseNameRegexp, err = regexp.Compile(*baseNameFlag)
 		if err != nil {
 			log.Fatalf("cannot compile basename regexp '%s': %v", *baseNameFlag, err)
+		}
+	}
+
+	if *dirNameFlag != "" {
+		dirNameRegexp, err = regexp.Compile(*dirNameFlag)
+		if err != nil {
+			log.Fatalf("cannot compile dirname regexp '%s': %v", *dirNameFlag, err)
 		}
 	}
 
@@ -132,9 +141,9 @@ func main() {
 	l2 := _logger.With().Timestamp().Str("host", hostname).Logger() //.Output(output)
 	var logger zLogger.ZLogger = &l2
 
-	if *clearPathFlag {
-		if *emptyFlag || *duplicateFlag || baseNameRegexp != nil {
-			logger.Fatal().Msg("cannot use -clear with -empty or -duplicate or -basename")
+	if *clearPathFlag || baseNameRegexp != nil || dirNameRegexp != nil {
+		if *emptyFlag || *duplicateFlag {
+			logger.Fatal().Msg("cannot use -clear with -empty or -duplicate")
 			return
 		}
 		if *folder == "" {
@@ -154,12 +163,43 @@ func main() {
 			logger.Fatal().Err(err).Msg("cannot build path")
 			return
 		}
-		for name, newName := range pathElements.ClearIterator {
-			fmt.Printf("%s\n--> %s\n", name, newName)
+		if *clearPathFlag {
+			for name, newName := range pathElements.ClearIterator {
+				fmt.Printf("%s\n--> %s\n", name, newName)
+			}
+			return
+		}
+		if baseNameRegexp != nil {
+			for name := range pathElements.FindBasename(baseNameRegexp) {
+				fmt.Printf("%s\n", name)
+				if *removeFlag {
+					fullpath := filepath.Join(*folder, name)
+					logger.Info().Msgf("removing %s", fullpath)
+					if err := os.Remove(fullpath); err != nil {
+						logger.Fatal().Err(err).Msgf("cannot remove %s", fullpath)
+						return
+					}
+				}
+			}
+			return
+		}
+		if dirNameRegexp != nil {
+			for name := range pathElements.FindDirname(dirNameRegexp) {
+				fmt.Printf("%s\n", name)
+				if *removeFlag {
+					fullpath := filepath.Join(*folder, name)
+					logger.Info().Msgf("removing %s", fullpath)
+					if err := os.RemoveAll(fullpath); err != nil {
+						logger.Fatal().Err(err).Msgf("cannot remove %s", fullpath)
+						return
+					}
+				}
+			}
+			return
 		}
 		return
 	}
-	if *emptyFlag || *duplicateFlag || baseNameRegexp != nil {
+	if *emptyFlag || *duplicateFlag {
 		if *clearPathFlag {
 			logger.Fatal().Msg("cannot use -empty or -duplicate or -basename with -clear")
 			return

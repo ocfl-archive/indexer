@@ -86,24 +86,25 @@ func build(fname string, utfEncode bool) string {
 	return fname
 }
 
-func NewPathElement(name string, parent *pathElement) *pathElement {
-	return &pathElement{name: name, parent: parent, subs: []*pathElement{}}
+func NewPathElement(name string, dir bool, parent *pathElement) *pathElement {
+	return &pathElement{name: name, dir: dir, parent: parent, subs: []*pathElement{}}
 }
 
 type pathElement struct {
 	name      string
 	clearName string
+	dir       bool
 	subs      []*pathElement
 	parent    *pathElement
 }
 
-func (p *pathElement) AddSub(name string) *pathElement {
+func (p *pathElement) AddSub(name string, dir bool) *pathElement {
 	for _, sub := range p.subs {
 		if sub.name == name {
 			return sub
 		}
 	}
-	sub := NewPathElement(name, p)
+	sub := NewPathElement(name, dir, p)
 	p.subs = append(p.subs, sub)
 	return sub
 }
@@ -152,19 +153,6 @@ func (p *pathElement) ClearIterator(yield func(string, string) bool) {
 	}
 }
 
-func (p *pathElement) ClearViewIterator(yield func(string, string) bool) {
-	clearString := p.ClearString()
-	str := p.String()
-	if clearString != str {
-		if !yield(strings.TrimPrefix(str, "/"), strings.TrimPrefix(clearString, "/")) {
-			return
-		}
-	}
-	for _, sub := range p.subs {
-		sub.ClearViewIterator(yield)
-	}
-}
-
 func (p *pathElement) PathIterator(yield func(string) bool) {
 	for _, sub := range p.subs {
 		sub.PathIterator(yield)
@@ -174,8 +162,35 @@ func (p *pathElement) PathIterator(yield func(string) bool) {
 	}
 }
 
+func (p *pathElement) FindBasename(re *regexp.Regexp) func(func(string) bool) {
+	return func(yield func(string) bool) {
+		for _, sub := range p.subs {
+			sub.FindBasename(re)(yield)
+		}
+		if !p.dir && re.MatchString(p.name) {
+			if !yield(strings.TrimPrefix(p.String(), "/")) {
+				return
+			}
+		}
+	}
+}
+
+func (p *pathElement) FindDirname(re *regexp.Regexp) func(func(string) bool) {
+	return func(yield func(string) bool) {
+		if p.dir && re.MatchString(p.name) {
+			if !yield(strings.TrimPrefix(p.String(), "/")) {
+				return
+			}
+			return
+		}
+		for _, sub := range p.subs {
+			sub.FindDirname(re)(yield)
+		}
+	}
+}
+
 func buildPath(fsys fs.FS) (*pathElement, error) {
-	root := NewPathElement("", nil)
+	root := NewPathElement("", true, nil)
 	if err := fs.WalkDir(fsys, ".", func(pathStr string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return errors.Wrapf(err, "cannot walk %s/%s", fsys, pathStr)
@@ -187,10 +202,10 @@ func buildPath(fsys fs.FS) (*pathElement, error) {
 			if pathPart == "." || pathPart == "" {
 				continue
 			}
-			curr = curr.AddSub(pathPart)
+			curr = curr.AddSub(pathPart, d.IsDir())
 		}
 		if d.IsDir() {
-			fmt.Printf("[d] %s/%s\n", fsys, pathStr)
+			//fmt.Printf("[d] %s/%s\n", fsys, pathStr)
 			return nil
 		}
 

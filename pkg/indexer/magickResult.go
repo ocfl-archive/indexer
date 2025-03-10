@@ -1,31 +1,45 @@
 package indexer
 
+import (
+	"bytes"
+	"strconv"
+)
+
+type floatString float64
+
+func (f *floatString) UnmarshalText(text []byte) error {
+	text = bytes.Trim(text, " \"")
+	xf, err := strconv.ParseFloat(string(text), 64)
+	*f = floatString(xf)
+	return err
+}
+
 type Geometry struct {
-	Width  float64 `json:"width,omitempty"`
-	Height float64 `json:"height,omitempty"`
-	X      float64 `json:"x,omitempty"`
-	Y      float64 `json:"y,omitempty"`
+	Width  floatString `json:"width,omitempty"`
+	Height floatString `json:"height,omitempty"`
+	X      floatString `json:"x,omitempty"`
+	Y      floatString `json:"y,omitempty"`
 }
 
 type Size struct {
-	X float64 `json:"x,omitempty"`
-	Y float64 `json:"y,omitempty"`
+	X floatString `json:"x,omitempty"`
+	Y floatString `json:"y,omitempty"`
 }
 
 type Statistics struct {
-	Min               float64 `json:"min,omitempty"`
-	Max               float64 `json:"max,omitempty"`
-	Mean              float64 `json:"mean,omitempty"`
-	Median            float64 `json:"median,omitempty"`
-	StandardDeviation float64 `json:"standardDeviation,omitempty"`
-	Kurtosis          float64 `json:"kurtosis,omitempty"`
-	Skewness          float64 `json:"skewness,omitempty"`
-	Entropy           float64 `json:"entropy,omitempty"`
+	Min               floatString `json:"min,omitempty"`
+	Max               floatString `json:"max,omitempty"`
+	Mean              floatString `json:"mean,omitempty"`
+	Median            floatString `json:"median,omitempty"`
+	StandardDeviation floatString `json:"standardDeviation,omitempty"`
+	Kurtosis          floatString `json:"kurtosis,omitempty"`
+	Skewness          floatString `json:"skewness,omitempty"`
+	Entropy           floatString `json:"entropy,omitempty"`
 }
 
 type Chromaticity struct {
-	X float64 `json:"x,omitempty"`
-	Y float64 `json:"y,omitempty"`
+	X floatString `json:"x,omitempty"`
+	Y floatString `json:"y,omitempty"`
 }
 
 type MagickImage struct {
@@ -51,7 +65,7 @@ type MagickImage struct {
 	ImageStatistics   map[string]*Statistics   `json:"imageStatistics,omitempty"`
 	ChannelStatistics map[string]*Statistics   `json:"channelStatistics,omitempty"`
 	RenderingIntent   string                   `json:"renderingIntent,omitempty"`
-	Gamma             float64                  `json:"gamma,omitempty"`
+	Gamma             floatString              `json:"gamma,omitempty"`
 	Chromaticity      map[string]*Chromaticity `json:"chromaticity,omitempty"`
 	MatteColor        string                   `json:"matteColor,omitempty"`
 	BackgroundColor   string                   `json:"backgroundColor,omitempty"`
@@ -64,7 +78,7 @@ type MagickImage struct {
 	Dispose           string                   `json:"dispose,omitempty"`
 	Iterations        int                      `json:"iterations,omitempty"`
 	Compression       string                   `json:"compression,omitempty"`
-	Quality           float64                  `json:"quality,omitempty"`
+	Quality           floatString              `json:"quality,omitempty"`
 	Orientation       string                   `json:"orientation,omitempty"`
 	Properties        map[string]any           `json:"properties,omitempty"`
 	Artifacts         map[string]any           `json:"artifacts,omitempty"`

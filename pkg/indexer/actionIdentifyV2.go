@@ -221,7 +221,7 @@ func (ai *ActionIdentifyV2) DoV2(filename string) (*ResultV2, error) {
 		data = "[" + data + "]"
 	}
 	if err := json.Unmarshal([]byte(data), &meta); err != nil {
-		return nil, errors.Wrapf(err, "cannot unmarshall metadata: %s", out.String())
+		return nil, errors.Wrapf(err, "cannot unmarshall metadata: %s", data)
 	}
 	if len(meta) == 0 {
 		return nil, errors.New("no metadata from imagemagick found")

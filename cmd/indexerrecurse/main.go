@@ -29,6 +29,7 @@ import (
 //go:embed minimal.toml
 var configToml []byte
 
+var configFlag = flag.String("config", "", "config file")
 var folder = flag.String("path", "", "path to iterate")
 var jsonFlag = flag.String("json", "", "json file to write")
 var csvFlag = flag.String("csv", "", "csv file to write")
@@ -48,7 +49,15 @@ func main() {
 
 	// create logger instance
 
-	conf, err := util.LoadConfig(configToml)
+	cfgToml := configToml
+	if *configFlag != "" {
+		data, err := os.ReadFile(*configFlag)
+		if err != nil {
+			log.Fatalf("cannot read config file: %v", err)
+		}
+		cfgToml = data
+	}
+	conf, err := util.LoadConfig(cfgToml)
 	if err != nil {
 		panic(fmt.Errorf("cannot load config: %v", err))
 	}

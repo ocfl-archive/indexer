@@ -41,6 +41,7 @@ var baseNameFlag = flag.String("basename", "", "go regexp of basename to search 
 var dirNameFlag = flag.String("dirname", "", "go regexp of dirname to search for")
 var removeFlag = flag.Bool("remove", false, "remove all found files")
 var clearPathFlag = flag.Bool("clear", false, "clear path")
+var renameFlag = flag.Bool("rename", false, "rename files")
 
 func main() {
 	flag.Parse()
@@ -166,6 +167,15 @@ func main() {
 		if *clearPathFlag {
 			for name, newName := range pathElements.ClearIterator {
 				fmt.Printf("%s\n--> %s\n", name, newName)
+				if *renameFlag {
+					fullpath := filepath.Join(*folder, name)
+					newpath := filepath.Join(*folder, newName)
+					logger.Info().Msgf("renaming '%s' to '%s'", fullpath, newpath)
+					if err := os.Rename(fullpath, newpath); err != nil {
+						logger.Fatal().Err(err).Msgf("cannot rename '%s' to '%s'", fullpath, newpath)
+						return
+					}
+				}
 			}
 			return
 		}

@@ -158,10 +158,12 @@ func worker(id uint, fsys fs.FS, idx *util.Indexer, logger zLogger.ZLogger, jobs
 			if err != nil {
 				logger.Error().Err(err).Msgf("cannot read from badger db")
 			} else {
-				if fData.Size != finfo.Size() || fData.LastMod != finfo.ModTime().Unix() {
-					fData = nil
-				} else {
-					fromCache = true
+				if fData != nil {
+					if fData.Size != finfo.Size() || fData.LastMod != finfo.ModTime().Unix() {
+						fData = nil
+					} else {
+						fromCache = true
+					}
 				}
 			}
 		}

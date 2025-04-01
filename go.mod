@@ -20,8 +20,7 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/sftp v1.13.7
-	github.com/richardlehane/siegfried v1.11.2
-	github.com/rs/zerolog v1.33.0
+	github.com/richardlehane/siegfried v1.11.1
 	github.com/tamerh/xml-stream-parser v1.5.0
 	gitlab.switch.ch/ub-unibas/go-ublogger/v2 v2.0.1
 	go.ub.unibas.ch/cloud/certloader/v2 v2.0.18
@@ -88,6 +87,7 @@ require (
 	github.com/ross-spencer/spargo v0.4.1 // indirect
 	github.com/ross-spencer/wikiprov v1.0.0 // indirect
 	github.com/rs/xid v1.6.0 // indirect
+	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/smallstep/certinfo v1.13.0 // indirect
 	github.com/swaggo/files v1.0.1 // indirect
 	github.com/swaggo/gin-swagger v1.6.0 // indirect

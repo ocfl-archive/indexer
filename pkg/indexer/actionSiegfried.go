@@ -23,6 +23,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -33,6 +34,7 @@ type ActionSiegfried struct {
 	server        *Server
 	typeMap       map[string]TypeSubtype
 	signatureData []byte
+	sfPool        sync.Pool
 }
 
 func (as *ActionSiegfried) CanHandle(contentType string, filename string) bool {
@@ -40,11 +42,32 @@ func (as *ActionSiegfried) CanHandle(contentType string, filename string) bool {
 }
 
 func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]string, typeMap map[string]TypeSubtype, server *Server, ad *ActionDispatcher) Action {
-	sf, err := siegfried.LoadReader(bytes.NewBuffer(signatureData))
-	if err != nil {
-		log.Fatalln(err)
+
+	/*
+		sf, err := siegfried.LoadReader(bytes.NewBuffer(signatureData))
+		if err != nil {
+			log.Fatalln(err)
+		}
+	*/
+	pool := sync.Pool{
+		New: func() interface{} {
+			sf, err := siegfried.LoadReader(bytes.NewBuffer(signatureData))
+			if err != nil {
+				log.Printf("Error instantiating siegfried: %v", err)
+				return nil
+			}
+			return sf
+		},
 	}
-	as := &ActionSiegfried{name: name, sf: sf, mimeMap: mimeMap, typeMap: typeMap, server: server, signatureData: signatureData}
+	as := &ActionSiegfried{
+		name: name,
+		//sf:            sf,
+		mimeMap:       mimeMap,
+		typeMap:       typeMap,
+		server:        server,
+		signatureData: signatureData,
+		sfPool:        pool,
+	}
 	ad.RegisterAction(as)
 	return as
 }
@@ -62,7 +85,14 @@ func (as *ActionSiegfried) GetName() string {
 }
 
 func (as *ActionSiegfried) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
-	ident, err := as.sf.Identify(reader, filepath.Base(filename), "")
+	sf := as.sfPool.Get().(*siegfried.Siegfried)
+	if sf == nil {
+		return nil, errors.New("cannot get siegfried from pool")
+	}
+	defer func() {
+		as.sfPool.Put(sf)
+	}()
+	ident, err := sf.Identify(reader, filepath.Base(filename), "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot identify file %s", filename)
 	}
@@ -97,7 +127,14 @@ func (as *ActionSiegfried) DoV2(filename string) (*ResultV2, error) {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", filename)
 	}
 	defer reader.Close()
-	ident, err := as.sf.Identify(reader, filepath.Base(filename), "")
+	sf := as.sfPool.Get().(*siegfried.Siegfried)
+	if sf == nil {
+		return nil, errors.New("cannot get siegfried from pool")
+	}
+	defer func() {
+		as.sfPool.Put(sf)
+	}()
+	ident, err := sf.Identify(reader, filepath.Base(filename), "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot identify file %s", filename)
 	}

@@ -27,8 +27,8 @@ import (
 )
 
 type ActionSiegfried struct {
-	name string
-	//	sf      *siegfried.Siegfried
+	name          string
+	sf            *siegfried.Siegfried
 	mimeMap       map[string]string
 	server        *Server
 	typeMap       map[string]TypeSubtype
@@ -40,7 +40,11 @@ func (as *ActionSiegfried) CanHandle(contentType string, filename string) bool {
 }
 
 func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]string, typeMap map[string]TypeSubtype, server *Server, ad *ActionDispatcher) Action {
-	as := &ActionSiegfried{name: name /* sf: sf, */, mimeMap: mimeMap, typeMap: typeMap, server: server, signatureData: signatureData}
+	sf, err := siegfried.LoadReader(bytes.NewBuffer(signatureData))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	as := &ActionSiegfried{name: name, sf: sf, mimeMap: mimeMap, typeMap: typeMap, server: server, signatureData: signatureData}
 	ad.RegisterAction(as)
 	return as
 }
@@ -58,11 +62,7 @@ func (as *ActionSiegfried) GetName() string {
 }
 
 func (as *ActionSiegfried) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
-	sf, err := siegfried.LoadReader(bytes.NewBuffer(as.signatureData))
-	if err != nil {
-		log.Fatalln(err)
-	}
-	ident, err := sf.Identify(reader, filepath.Base(filename), "")
+	ident, err := as.sf.Identify(reader, filepath.Base(filename), "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot identify file %s", filename)
 	}
@@ -92,16 +92,12 @@ func (as *ActionSiegfried) Stream(contentType string, reader io.Reader, filename
 }
 
 func (as *ActionSiegfried) DoV2(filename string) (*ResultV2, error) {
-	sf, err := siegfried.LoadReader(bytes.NewBuffer(as.signatureData))
-	if err != nil {
-		log.Fatalln(err)
-	}
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", filename)
 	}
 	defer reader.Close()
-	ident, err := sf.Identify(reader, filepath.Base(filename), "")
+	ident, err := as.sf.Identify(reader, filepath.Base(filename), "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot identify file %s", filename)
 	}

@@ -20,7 +20,7 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/sftp v1.13.7
-	github.com/richardlehane/siegfried v1.11.1
+	github.com/richardlehane/siegfried v1.11.2
 	github.com/tamerh/xml-stream-parser v1.5.0
 	gitlab.switch.ch/ub-unibas/go-ublogger/v2 v2.0.1
 	go.ub.unibas.ch/cloud/certloader/v2 v2.0.18

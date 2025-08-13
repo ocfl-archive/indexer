@@ -16,11 +16,8 @@ package indexer
 import (
 	"bytes"
 	"context"
-	"emperror.dev/errors"
 	"encoding/json"
 	"fmt"
-	ffmpeg_models "github.com/je4/goffmpeg/models"
-	"golang.org/x/exp/slices"
 	"io"
 	"net/url"
 	"os/exec"
@@ -29,6 +26,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"emperror.dev/errors"
+	ffmpeg_models "github.com/je4/goffmpeg/models"
+	"golang.org/x/exp/slices"
 )
 
 var regexpFFProbeDuration = regexp.MustCompile("^([0-9]+):([0-9]+):([0-9]+).([0-9]{2})$")
@@ -102,6 +103,16 @@ func NewActionFFProbe(name string, ffprobe string, wsl bool, timeout time.Durati
 	if online {
 		caps |= ACTALLPROTO
 	}
+	if name == "" {
+		name = NameFFProbe
+	}
+	if timeout == 0 {
+		timeout = time.Second * 15
+	}
+	if caps == 0 {
+		caps = ACTFILEHEAD | ACTSTREAM
+	}
+
 	af := &ActionFFProbe{name: name, ffprobe: ffprobe, wsl: wsl, timeout: timeout, caps: caps, server: server, mime: mime}
 	ad.RegisterAction(af)
 	return af

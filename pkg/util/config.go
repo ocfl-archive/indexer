@@ -15,18 +15,93 @@
 package util
 
 import (
+	"bytes"
+	"encoding/json"
+	"image"
+	"image/png"
+	"net/http"
+	"os"
+	"os/user"
+	"path/filepath"
+
 	"emperror.dev/errors"
 	"github.com/BurntSushi/toml"
 	"github.com/je4/utils/v2/pkg/stashconfig"
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
-	"os"
-	"os/user"
-	"path/filepath"
 )
 
 type Config struct {
 	Indexer *indexer.IndexerConfig
 	Log     stashconfig.Config `toml:"log"`
+}
+
+func OptimizeConfig(conf *Config) error {
+	if conf.Indexer.Siegfried.SignatureFile == "" {
+		user, err := user.Current()
+		if err != nil {
+			return errors.Wrap(err, "cannot get current user")
+		}
+		fp := filepath.Join(user.HomeDir, "siegfried", "default.sig")
+		fi, err := os.Stat(fp)
+		if err == nil && !fi.IsDir() {
+			conf.Indexer.Siegfried.SignatureFile = fp
+		}
+	}
+	if conf.Indexer.FFMPEG.Enabled {
+		if conf.Indexer.FFMPEG.FFProbe == "" {
+			if ffprobepath, ok := checkProgram("ffprobe"); ok {
+				conf.Indexer.FFMPEG.FFProbe = ffprobepath
+			} else {
+				conf.Indexer.FFMPEG.Enabled = false
+			}
+		}
+	}
+	if conf.Indexer.ImageMagick.Enabled {
+		if conf.Indexer.ImageMagick.Convert == "" {
+			if convertpath, ok := checkProgram("magickconvert"); ok {
+				conf.Indexer.ImageMagick.Convert = convertpath
+			} else {
+				conf.Indexer.ImageMagick.Enabled = false
+			}
+			if identifypath, ok := checkProgram("magickidentify"); ok {
+				conf.Indexer.ImageMagick.Identify = identifypath
+			} else {
+				conf.Indexer.ImageMagick.Enabled = false
+			}
+		}
+	}
+	if conf.Indexer.Tika.Enabled {
+		tikaoptimize := func() error {
+			if conf.Indexer.Tika.AddressMeta == "" {
+				conf.Indexer.Tika.AddressMeta = "http://localhost:9998"
+			}
+			baseImage := image.NewRGBA(image.Rect(0, 0, 10, 10))
+			imageBuffer := bytes.NewBuffer(nil)
+			if err := png.Encode(imageBuffer, baseImage); err != nil {
+				return errors.Wrap(err, "png.Encode")
+			}
+			var meta = map[string]any{}
+			resp, err := http.Post(conf.Indexer.Tika.AddressMeta, "application/octet-stream", imageBuffer)
+			if err != nil {
+				conf.Indexer.Tika.Enabled = false
+				return nil
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				conf.Indexer.Tika.Enabled = false
+				return nil
+			}
+			if err := json.NewDecoder(resp.Body).Decode(meta); err != nil {
+				conf.Indexer.Tika.Enabled = false
+				return nil
+			}
+			return nil
+		}
+		if err := tikaoptimize(); err != nil {
+			return errors.Wrap(err, "tikaoptimize")
+		}
+	}
+	return nil
 }
 
 func LoadConfig(tomlBytes []byte) (*Config, error) {
@@ -40,16 +115,8 @@ func LoadConfig(tomlBytes []byte) (*Config, error) {
 	if err := toml.Unmarshal(tomlBytes, conf); err != nil {
 		return nil, errors.Wrapf(err, "Error unmarshalling config")
 	}
-	if conf.Indexer.Siegfried.SignatureFile == "" {
-		user, err := user.Current()
-		if err != nil {
-			return nil, errors.Wrap(err, "cannot get current user")
-		}
-		fp := filepath.Join(user.HomeDir, "siegfried", "default.sig")
-		fi, err := os.Stat(fp)
-		if err == nil && !fi.IsDir() {
-			conf.Indexer.Siegfried.SignatureFile = fp
-		}
+	if err := OptimizeConfig(conf); err != nil {
+		return nil, errors.Wrap(err, "Error optimizing config")
 	}
 	return conf, nil
 }

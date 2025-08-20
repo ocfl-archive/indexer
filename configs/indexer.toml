@@ -14,46 +14,33 @@ jwtalg = ["HS256", "HS384", "HS512"] # "hs256" "hs384" "hs512" "es256" "es384" "
 errorTemplate = "web/template/error.gohtml" # error message for memoHandler
 tempDir = "/mnt/c/temp/"
 
-[MimeRelevance]
+[Indexer.MimeRelevance]
 # relevance < 100: rate down
 # relevance > 100: rate up
 # default = 100
-    [MimeRelevance.1]
+    [Indexer.MimeRelevance.1]
         regexp = "^application/octet-stream$"
         weight = 1
-    [MimeRelevance.2]
+    [Indexer.MimeRelevance.2]
         regexp = "^text/plain$"
         weight = 3
-    [MimeRelevance.3]
+    [Indexer.MimeRelevance.3]
         regexp = "^audio/mpeg$"
         weight = 4
-    [MimeRelevance.4]
+    [Indexer.MimeRelevance.4]
         regexp = "^video/mpeg$"
         weight = 4
-    [MimeRelevance.5]
+    [Indexer.MimeRelevance.5]
         regexp = "^text/.+$"
         weight = 4
-    [MimeRelevance.6]
+    [Indexer.MimeRelevance.6]
         regexp = "^application/.+"
         weight = 2
-    [MimeRelevance.7]
+    [Indexer.MimeRelevance.7]
         regexp = "^.+/x-.+"
         weight = 80
 
-[sftp]
-knownhosts = "" # if empty, IgnoreHostKey is true
-password = "blubb" # if not empty enable password login (ENV: SFTP_PASSWORD)
-privatekey = [] # path to private keys (z.B. /home/<user>/.ssh/id_rsa
-
-[[filemap]]
-alias = "c"
-folder = "/mnt/c"
-
-[[filemap]]
-alias = "blah"
-folder = "/mnt/c/temp"
-
-[nsrl]
+[Indexer.nsrl]
 badger = "/mnt/c/temp/nsrl"
 enabled = false
 
@@ -80,10 +67,10 @@ Subtype = "mei"
 Mime = "application/xml"
 
 
-[Siegfried]
+[Indexer.Siegfried]
 enabled = true
-signaturefile = "/usr/share/siegfried/default.sig"
-[Siegfried.MimeMap]
+signaturefile = ""
+[Indexer.Siegfried.MimeMap]
 "x-fmt/92" = "image/psd"
 "fmt/134" = "audio/mp3"
 "x-fmt/184" = "image/x-sun-raster"
@@ -104,49 +91,49 @@ signaturefile = "/usr/share/siegfried/default.sig"
 "fmt/1040" = "image/vnd.ms-dds"
 "fmt/1781" = "image/x-pentax-pef"
 
-[Siegfried.TypeMap."fmt/483"]
+[Indexer.Siegfried.TypeMap."fmt/483"]
 Type = "text"
 Subtype = "epub"
 
-[clamav]
+[Indexer.clamav]
     enabled = true
     clamscan = "/usr/bin/clamdscan"
     wsl = false
     timeout = "15s"
 
 
-[FFMPEG]
-    ffprobe = "/usr/bin/ffprobe"
+[Indexer.FFMPEG]
+    ffprobe = ""
     wsl = false  # true, if executable is within linux subsystem on windows
     timeout = "25s"
     online = true
     enabled = true
-    [[FFMPEG.Mime]]
+    [[Indexer.FFMPEG.Mime]]
         video = false
         audio = true
         format = "mov,mp4,m4a,3gp,3g2,mj2"
         mime = "audio/mp4"
-    [[FFMPEG.Mime]]
+    [[Indexer.FFMPEG.Mime]]
         video = true
         audio = true
         format = "mov,mp4,m4a,3gp,3g2,mj2"
         mime = "video/mp4"
-    [[FFMPEG.Mime]]
+    [[Indexer.FFMPEG.Mime]]
         video = true
         audio = false
         format = "mov,mp4,m4a,3gp,3g2,mj2"
         mime = "video/mp4"
 
-[ImageMagick]
-identify = "/usr/bin/identify"
-convert = "/usr/bin/convert"
+[Indexer.ImageMagick]
+identify = ""
+convert = ""
 wsl = false  # true, if executable is within linux subsystem on windows
 timeout = "480s"
 online = true
 enabled = true
 
-[Tika]
-    address = "http://localhost:9998/meta"
+[Indexer.Tika]
+    address = ""
     #address = "http://localhost:9998/rmeta/text"
     timeout = "10s"
     regexpMime = "^." # ""^application/"  # regexp for mimetype, which are used for tika queries
@@ -154,28 +141,28 @@ enabled = true
     online = true
     enabled = true
 
-[[External]]
+[[Indexer.External]]
 name = "validateav"
 address = "http://localhost:8083/validateav/[[PATH]]"
 calltype = "EACTURL"
 mimetype = "^(video|audio)/.*"
 ActionCapabilities = ["ACTFILE"]
 
-[[External]]
+[[Indexer.External]]
 name = "exif"
 address = "http://localhost:8083/exif/[[PATH]]"
 calltype = "EACTURL"
 mimetype = ".*"
 ActionCapabilities = ["ACTFILE"]
 
-[[External]]
+[[Indexer.External]]
 name = "validateimage"
 address = "http://localhost:8083/validateimage/[[PATH]]"
 calltype = "EACTURL"
 mimetype = "^image/.*"
 ActionCapabilities = ["ACTFILE"]
 
-[[External]]
+[[Indexer.External]]
 name = "histogram"
 address = "http://localhost:8083/histogram/[[PATH]]"
 calltype = "EACTURL"

@@ -14,18 +14,19 @@
 package indexer
 
 import (
-	"github.com/je4/utils/v2/pkg/checksum"
 	"time"
+
+	"github.com/je4/utils/v2/pkg/checksum"
 )
 
 const (
 	NameSiegfried = "siegfried"
-	NameXML = "xml"
-	NameChecksum ="checksum"
-	NameTika = "tika"
-	NameFFProbe = "ffprobe"
-	NameIdentify = "identify"
-	NameFullText = "fulltext"
+	NameXML       = "xml"
+	NameChecksum  = "checksum"
+	NameTika      = "tika"
+	NameFFProbe   = "ffprobe"
+	NameIdentify  = "identify"
+	NameFullText  = "fulltext"
 )
 
 type duration struct {
@@ -174,7 +175,7 @@ func GetDefaultConfig() *IndexerConfig {
 		TempDir:    "",
 		Siegfried: ConfigSiegfried{
 			Enabled:       true,
-			SignatureFile: "internal:/siegfried/default.sig",
+			SignatureFile: "internal:default",
 			MimeMap: map[string]string{
 				"x-fmt/92":  "image/psd",
 				"fmt/134":   "audio/mp3",

@@ -17,7 +17,6 @@ package indexer
 import (
 	"bytes"
 	"context"
-	"emperror.dev/errors"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,6 +26,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"emperror.dev/errors"
 )
 
 type ActionIdentify struct {
@@ -147,12 +148,13 @@ func (ai *ActionIdentify) Do(uri *url.URL, contentType string, width *uint, heig
 			infile = t + ":-"
 		}
 	}
-	cmdparam := []string{infile, "json:-"}
 	cmdfile := ai.convert
-	if ai.wsl {
-		cmdparam = append([]string{cmdfile}, cmdparam...)
-		cmdfile = "wsl"
+	cmdparam := []string{}
+	parts := strings.Split(ai.convert, " ")
+	if len(parts) > 1 {
+		cmdparam = append(cmdparam, parts[1:]...)
 	}
+	cmdparam = append(cmdparam, infile, "json:-")
 
 	var out bytes.Buffer
 	out.Grow(1024 * 1024) // 1MB size

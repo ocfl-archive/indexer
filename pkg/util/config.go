@@ -16,13 +16,16 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"image"
 	"image/png"
+	"io"
 	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/BurntSushi/toml"
@@ -35,8 +38,8 @@ type Config struct {
 	Log     stashconfig.Config `toml:"log"`
 }
 
-func OptimizeConfig(conf *Config) error {
-	if conf.Indexer.Siegfried.SignatureFile == "" {
+func OptimizeConfig(conf *indexer.IndexerConfig) error {
+	if conf.Siegfried.SignatureFile == "" {
 		user, err := user.Current()
 		if err != nil {
 			return errors.Wrap(err, "cannot get current user")
@@ -44,55 +47,77 @@ func OptimizeConfig(conf *Config) error {
 		fp := filepath.Join(user.HomeDir, "siegfried", "default.sig")
 		fi, err := os.Stat(fp)
 		if err == nil && !fi.IsDir() {
-			conf.Indexer.Siegfried.SignatureFile = fp
+			conf.Siegfried.SignatureFile = fp
+		} else {
+			conf.Siegfried.SignatureFile = "internal:default"
 		}
 	}
-	if conf.Indexer.FFMPEG.Enabled {
-		if conf.Indexer.FFMPEG.FFProbe == "" {
+	if conf.FFMPEG.Enabled {
+		if conf.FFMPEG.FFProbe == "" {
 			if ffprobepath, ok := checkProgram("ffprobe"); ok {
-				conf.Indexer.FFMPEG.FFProbe = ffprobepath
+				conf.FFMPEG.FFProbe = ffprobepath
 			} else {
-				conf.Indexer.FFMPEG.Enabled = false
+				conf.FFMPEG.Enabled = false
 			}
 		}
 	}
-	if conf.Indexer.ImageMagick.Enabled {
-		if conf.Indexer.ImageMagick.Convert == "" {
+	if conf.ImageMagick.Enabled {
+		if conf.ImageMagick.Convert == "" {
 			if convertpath, ok := checkProgram("magickconvert"); ok {
-				conf.Indexer.ImageMagick.Convert = convertpath
+				conf.ImageMagick.Convert = convertpath
 			} else {
-				conf.Indexer.ImageMagick.Enabled = false
+				conf.ImageMagick.Enabled = false
 			}
 			if identifypath, ok := checkProgram("magickidentify"); ok {
-				conf.Indexer.ImageMagick.Identify = identifypath
+				conf.ImageMagick.Identify = identifypath
 			} else {
-				conf.Indexer.ImageMagick.Enabled = false
+				conf.ImageMagick.Enabled = false
 			}
 		}
 	}
-	if conf.Indexer.Tika.Enabled {
+	if conf.Tika.Enabled {
 		tikaoptimize := func() error {
-			if conf.Indexer.Tika.AddressMeta == "" {
-				conf.Indexer.Tika.AddressMeta = "http://localhost:9998"
+			if conf.Tika.AddressMeta == "" {
+				conf.Tika.AddressMeta = "http://localhost:9998/tika"
 			}
 			baseImage := image.NewRGBA(image.Rect(0, 0, 10, 10))
 			imageBuffer := bytes.NewBuffer(nil)
 			if err := png.Encode(imageBuffer, baseImage); err != nil {
 				return errors.Wrap(err, "png.Encode")
 			}
-			var meta = map[string]any{}
-			resp, err := http.Post(conf.Indexer.Tika.AddressMeta, "application/octet-stream", imageBuffer)
+			client := &http.Client{}
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+			defer cancel()
+			reader := bytes.NewBuffer(imageBuffer.Bytes())
+			req, err := http.NewRequestWithContext(ctx, http.MethodPut, conf.Tika.AddressMeta, reader)
 			if err != nil {
-				conf.Indexer.Tika.Enabled = false
-				return nil
+				return errors.Wrapf(err, "cannot create tika request - %v", conf.Tika.AddressMeta)
+			}
+			req.Header.Add("Accept", "application/json")
+			resp, err := client.Do(req)
+			if err != nil {
+				return errors.Wrapf(err, "error in tika request - %v", conf.Tika.AddressMeta)
 			}
 			defer resp.Body.Close()
+
 			if resp.StatusCode != http.StatusOK {
-				conf.Indexer.Tika.Enabled = false
+				conf.Tika.Enabled = false
 				return nil
 			}
-			if err := json.NewDecoder(resp.Body).Decode(meta); err != nil {
-				conf.Indexer.Tika.Enabled = false
+			bodyData, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return errors.Wrapf(err, "cannot read tika response - %v", conf.Tika.AddressMeta)
+			}
+			var meta = &struct {
+				Width  string
+				Height string
+			}{}
+			if err := json.Unmarshal(bodyData, meta); err != nil {
+				conf.Tika.Enabled = false
+				return nil
+			}
+			if meta.Width != "10" || meta.Height != "10" {
+				conf.Tika.Enabled = false
 				return nil
 			}
 			return nil
@@ -115,7 +140,7 @@ func LoadConfig(tomlBytes []byte) (*Config, error) {
 	if err := toml.Unmarshal(tomlBytes, conf); err != nil {
 		return nil, errors.Wrapf(err, "Error unmarshalling config")
 	}
-	if err := OptimizeConfig(conf); err != nil {
+	if err := OptimizeConfig(conf.Indexer); err != nil {
 		return nil, errors.Wrap(err, "Error optimizing config")
 	}
 	return conf, nil

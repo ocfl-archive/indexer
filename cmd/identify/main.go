@@ -17,9 +17,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/dgraph-io/badger/v4"
-	lm "github.com/je4/utils/v2/pkg/logger"
-	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 	"html/template"
 	"io"
 	"log"
@@ -30,6 +27,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/dgraph-io/badger/v4"
+	lm "github.com/je4/utils/v2/pkg/logger"
+	datasiegfried "github.com/ocfl-archive/indexer/v3/internal/siegfried"
+	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
+	"github.com/ocfl-archive/indexer/v3/pkg/util"
 )
 
 const INDEXER = "indexer v0.2, info-age GmbH Basel"
@@ -57,6 +60,9 @@ func main() {
 	}
 	// configfile should exists at this place
 	config := LoadConfig(*configFile)
+	if err := util.OptimizeConfig(config.Indexer); err != nil {
+		log.Fatalf("Error optimizing config: %v", err)
+	}
 
 	// create logger instance
 	log, lf := lm.CreateLogger("indexer", config.Logfile, nil, config.Loglevel, config.LogFormat)
@@ -76,7 +82,7 @@ func main() {
 	}
 
 	mapping := map[string]string{}
-	for _, val := range config.FileMap {
+	for _, val := range config.Indexer.FileMap {
 		mapping[strings.ToLower(val.Alias)] = val.Folder
 	}
 	fm := indexer.NewFileMapper(mapping)
@@ -88,7 +94,7 @@ func main() {
 	}
 
 	mimeRelevance := map[int]indexer.MimeWeightString{}
-	for key, val := range config.MimeRelevance {
+	for key, val := range config.Indexer.MimeRelevance {
 		keyInt, err := strconv.ParseInt(key, 10, 64)
 		if err != nil {
 			log.Panicf("cannot convert mimeRelevance %s to string", key)
@@ -106,10 +112,10 @@ func main() {
 	}
 
 	srv, err := indexer.NewServer(
-		config.HeaderTimeout.Duration,
-		config.HeaderSize,
-		config.DownloadMime,
-		config.MaxDownloadSize,
+		config.Indexer.HeaderTimeout.Duration,
+		config.Indexer.HeaderSize,
+		config.Indexer.DownloadMime,
+		config.Indexer.MaxDownloadSize,
 		mimeRelevance,
 		config.JwtKey,
 		config.JwtAlg,
@@ -117,7 +123,7 @@ func main() {
 		log,
 		accesslog,
 		errorTpl,
-		config.TempDir,
+		config.Indexer.TempDir,
 		fm,
 		sftp,
 	)
@@ -129,22 +135,22 @@ func main() {
 	ad := indexer.NewActionDispatcher(mimeRelevance)
 
 	var nsrldb *badger.DB
-	if config.NSRL.Enabled {
-		stat2, err := os.Stat(config.NSRL.Badger)
+	if config.Indexer.NSRL.Enabled {
+		stat2, err := os.Stat(config.Indexer.NSRL.Badger)
 		if err != nil {
-			fmt.Printf("cannot stat badger folder %s: %v\n", config.NSRL.Badger, err)
+			fmt.Printf("cannot stat badger folder %s: %v\n", config.Indexer.NSRL.Badger, err)
 			return
 		}
 		if !stat2.IsDir() {
-			fmt.Printf("%s is not a directory\n", config.NSRL.Badger)
+			fmt.Printf("%s is not a directory\n", config.Indexer.NSRL.Badger)
 			return
 		}
 
-		bconfig := badger.DefaultOptions(config.NSRL.Badger)
+		bconfig := badger.DefaultOptions(config.Indexer.NSRL.Badger)
 		bconfig.ReadOnly = true
 		nsrldb, err = badger.Open(bconfig)
 		if err != nil {
-			log.Panicf("cannot open badger database in %s: %v\n", config.NSRL.Badger, err)
+			log.Panicf("cannot open badger database in %s: %v\n", config.Indexer.NSRL.Badger, err)
 			return
 		}
 		//log.Infof("nsrl max batch count: %v", nsrldb.MaxBatchCount())
@@ -159,14 +165,19 @@ func main() {
 	}
 
 	if config.Indexer.Siegfried.Enabled {
-		if _, err := os.Stat(config.Indexer.Siegfried.SignatureFile); err != nil {
-			log.Panicf("siegfried signature file at %s not found. Please use 'sf -update' to download it: %v", config.Indexer.Siegfried.SignatureFile, err)
+		var signatureData []byte
+		if config.Indexer.Siegfried.SignatureFile == "internal:default" {
+			signatureData = datasiegfried.DefaultSig
+		} else {
+			if _, err := os.Stat(config.Indexer.Siegfried.SignatureFile); err != nil {
+				log.Panicf("siegfried signature file at %s not found. Please use 'sf -update' to download it: %v", config.Indexer.Siegfried.SignatureFile, err)
+			}
+			signatureData, err = os.ReadFile(config.Indexer.Siegfried.SignatureFile)
+			if err != nil {
+				log.Panicf("cannot read signature file at %s: %v", config.Indexer.Siegfried.SignatureFile, err)
+			}
 		}
-		signatureData, err := os.ReadFile(config.Indexer.Siegfried.SignatureFile)
-		if err != nil {
-			log.Panicf("cannot read signature file at %s: %v", config.Indexer.Siegfried.SignatureFile, err)
-		}
-		indexer.NewActionSiegfried("siegfried", signatureData, config.Indexer.Siegfried.MimeMap, config.Indexer.Siegfried.T, srv, ad)
+		indexer.NewActionSiegfried("siegfried", signatureData, config.Indexer.Siegfried.MimeMap, config.Indexer.Siegfried.TypeMap, srv, ad)
 		//srv.AddActions(sf)
 	}
 
@@ -189,7 +200,7 @@ func main() {
 	}
 
 	if config.Indexer.Tika.Enabled {
-		indexer.NewActionTika("tika", config.Indexer.Tika.Address, config.Indexer.Tika.Timeout.Duration, config.Indexer.Tika.RegexpMime, config.Indexer.Tika.RegexpMimeNot, "", config.Indexer.Tika.Online, srv, ad)
+		indexer.NewActionTika("tika", config.Indexer.Tika.AddressMeta, config.Indexer.Tika.Timeout.Duration, config.Indexer.Tika.RegexpMimeMeta, config.Indexer.Tika.RegexpMimeMetaNot, "", config.Indexer.Tika.Online, srv, ad)
 		//srv.AddActions(tika)
 	}
 

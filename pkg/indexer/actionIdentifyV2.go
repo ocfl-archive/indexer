@@ -17,10 +17,8 @@ package indexer
 import (
 	"bytes"
 	"context"
-	"emperror.dev/errors"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"io"
 	"net/http"
 	"net/url"
@@ -29,6 +27,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"emperror.dev/errors"
+	"golang.org/x/exp/slices"
 )
 
 var regexIdentifyMime = regexp.MustCompile("^image/")
@@ -120,24 +121,25 @@ func (ai *ActionIdentifyV2) Stream(contentType string, reader io.Reader, filenam
 			break
 		}
 	}
-	cmdparam := []string{infile, "json:-"}
-	cmdfile := ai.convert
+
+	var cmdParts = []string{}
 	if ai.wsl {
-		cmdparam = append([]string{cmdfile}, cmdparam...)
-		cmdfile = "wsl"
+		cmdParts = append(cmdParts, "wsl")
 	}
+	cmdParts = append(cmdParts, strings.Split(ai.convert, " ")...)
+	cmdParts = append(cmdParts, infile, "json:-")
 
 	var out bytes.Buffer
 	out.Grow(1024 * 1024) // 1MB size
 	ctx, cancel := context.WithTimeout(context.Background(), ai.timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, cmdfile, cmdparam...)
+	cmd := exec.CommandContext(ctx, cmdParts[0], cmdParts[1:]...)
 	cmd.Stdin = reader
 	cmd.Stdout = &out
 
 	if err := cmd.Run(); err != nil {
-		return nil, errors.Wrapf(err, "error executing (%s %s) for file '%s': %v", cmdfile, cmdparam, filename, out.String())
+		return nil, errors.Wrapf(err, "error executing (%s) for file '%s': %v", strings.Join(cmdParts, " "), filename, out.String())
 	}
 
 	var meta = []*MagickResult{}

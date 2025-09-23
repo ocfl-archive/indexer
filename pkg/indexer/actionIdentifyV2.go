@@ -77,11 +77,18 @@ func NewActionIdentifyV2(name, identify, convert string, wsl bool, timeout time.
 	if mime, err := GetMagickMime(); err == nil {
 		if mime != nil {
 			for _, m := range mime {
-				if m.Pattern != nil && *m.Pattern != "" && m.Acronym != nil && *m.Acronym != "" {
-					ai.extensionMap[regexp.MustCompile(wildCardToRegexp(*m.Pattern))] = *m.Acronym
+				var pattern, acronym string
+				if m.Pattern != nil {
+					pattern = *m.Pattern
 				}
-				if m.Acronym != nil && *m.Acronym != "" {
-					ai.mimeMap[m.Type] = *m.Acronym
+				if m.Acronym != nil {
+					acronym = *m.Acronym
+				}
+				if pattern != "" {
+					ai.extensionMap[regexp.MustCompile(wildCardToRegexp(pattern))] = acronym
+				}
+				if acronym != "" {
+					ai.mimeMap[m.Type] = acronym
 				} else {
 					m.Type = strings.ToLower(m.Type)
 					if strings.HasPrefix(m.Type, "image/") {

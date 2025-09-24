@@ -124,7 +124,9 @@ func (ai *ActionIdentifyV2) Stream(contentType string, reader io.Reader, filenam
 	infile := "-"
 	for re, t := range ai.extensionMap {
 		if re.MatchString(filename) {
-			infile = t + ":-"
+			if t != "" {
+				infile = t + ":-"
+			}
 			break
 		}
 	}

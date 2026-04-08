@@ -15,9 +15,6 @@ package indexer
 
 import (
 	"bytes"
-	"emperror.dev/errors"
-	"github.com/richardlehane/siegfried"
-	"github.com/richardlehane/siegfried/pkg/pronom"
 	"io"
 	"log"
 	"net/url"
@@ -25,6 +22,10 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"emperror.dev/errors"
+	"github.com/richardlehane/siegfried"
+	"github.com/richardlehane/siegfried/pkg/pronom"
 )
 
 type ActionSiegfried struct {
@@ -41,7 +42,7 @@ func (as *ActionSiegfried) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
-func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]string, typeMap map[string]TypeSubtype, server *Server, ad *ActionDispatcher) Action {
+func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]string, typeMap map[string]TypeSubtype, server *Server, ad *ActionDispatcher, streamSize int) Action {
 
 	/*
 		sf, err := siegfried.LoadReader(bytes.NewBuffer(signatureData))
@@ -49,6 +50,9 @@ func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]st
 			log.Fatalln(err)
 		}
 	*/
+	if streamSize > 0 {
+		siegfried.StreamSize(streamSize)
+	}
 	pool := sync.Pool{
 		New: func() interface{} {
 			sf, err := siegfried.LoadReader(bytes.NewBuffer(signatureData))

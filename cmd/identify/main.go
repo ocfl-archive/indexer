@@ -177,7 +177,7 @@ func main() {
 				log.Panicf("cannot read signature file at %s: %v", config.Indexer.Siegfried.SignatureFile, err)
 			}
 		}
-		indexer.NewActionSiegfried("siegfried", signatureData, config.Indexer.Siegfried.MimeMap, config.Indexer.Siegfried.TypeMap, srv, ad)
+		indexer.NewActionSiegfried("siegfried", signatureData, config.Indexer.Siegfried.MimeMap, config.Indexer.Siegfried.TypeMap, srv, ad, config.Indexer.Siegfried.StreamSize)
 		//srv.AddActions(sf)
 	}
 

@@ -96,7 +96,8 @@ func OptimizeConfig(conf *indexer.IndexerConfig) error {
 			req.Header.Add("Accept", "application/json")
 			resp, err := client.Do(req)
 			if err != nil {
-				return errors.Wrapf(err, "error in tika request - %v", conf.Tika.AddressMeta)
+				conf.Tika.Enabled = false
+				return nil
 			}
 			defer resp.Body.Close()
 

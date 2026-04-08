@@ -27,6 +27,7 @@ const (
 	NameFFProbe   = "ffprobe"
 	NameIdentify  = "identify"
 	NameFullText  = "fulltext"
+	NameJSON      = "json"
 )
 
 type duration struct {
@@ -106,6 +107,21 @@ type ConfigImageMagick struct {
 	Enabled  bool
 }
 
+type ConfigJSONFormat struct {
+	MandatoryFields []string
+	OptionalFields  []string
+	NumOptionals    int
+	Pronom          string
+	Mime            string
+	Type            string
+	Subtype         string
+}
+
+type ConfigJSON struct {
+	Enabled bool
+	Format  map[string]ConfigJSONFormat
+}
+
 type ConfigXMLFormat struct {
 	Element    string
 	Regexp     bool
@@ -164,6 +180,7 @@ type IndexerConfig struct {
 	ImageMagick     ConfigImageMagick
 	Tika            ConfigTika
 	XML             ConfigXML
+	JSON            ConfigJSON
 	External        []ConfigExternalAction
 	FileMap         []ConfigFileMap
 	URLRegexp       []string

@@ -73,6 +73,7 @@ func InitActionDispatcher(fss map[string]fs.FS, conf IndexerConfig, logger zLogg
 		conf.Siegfried.TypeMap,
 		nil,
 		actionDispatcher,
+		0,
 	)
 	logStartup(logger, NameSiegfried)
 	if conf.XML.Enabled {
@@ -83,6 +84,15 @@ func InitActionDispatcher(fss map[string]fs.FS, conf IndexerConfig, logger zLogg
 			actionDispatcher,
 		)
 		logStartup(logger, NameXML)
+	}
+	if conf.JSON.Enabled {
+		_ = NewActionJSON(
+			NameJSON,
+			conf.JSON.Format,
+			nil,
+			actionDispatcher,
+		)
+		logStartup(logger, NameJSON)
 	}
 	if conf.Checksum.Enabled {
 		_ = NewActionChecksum(

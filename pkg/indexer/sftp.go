@@ -45,7 +45,7 @@ func NewSFTP(PrivateKey []string, Password, KnownHosts string, log zLogger.ZWrap
 	for _, pk := range PrivateKey {
 		key, err := os.ReadFile(pk)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot read private key file %s")
+			return nil, errors.Wrapf(err, "cannot read private key file %s", pk)
 		}
 		// Create the Signer for this private key.
 		s, err := ssh.ParsePrivateKey(key)

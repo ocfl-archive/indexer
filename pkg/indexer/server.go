@@ -115,7 +115,7 @@ func NewServer(
 	for _, key := range mKeys {
 		rexp, err := regexp.Compile(mimeRelevance[key].Regexp)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot compile Regexp %s", key)
+			return nil, errors.Wrapf(err, "cannot compile Regexp %d", key)
 		}
 		srv.mimeRelevance = append(srv.mimeRelevance, MimeWeight{
 			regexp: rexp,

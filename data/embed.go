@@ -6,3 +6,6 @@ import _ "embed"
 //
 //go:embed mime.xml
 var MagickMimeXML []byte
+
+//go:embed default.toml
+var DefaultConfig string

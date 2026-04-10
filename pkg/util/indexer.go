@@ -1,15 +1,20 @@
 package util
 
 import (
+	"io"
+	"io/fs"
+
 	"emperror.dev/errors"
 	"github.com/je4/utils/v2/pkg/checksum"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
-	"io"
-	"io/fs"
 )
 
 type Indexer indexer.ActionDispatcher
+
+func (idx *Indexer) ActionDispatcher() *indexer.ActionDispatcher {
+	return (*indexer.ActionDispatcher)(idx)
+}
 
 func (idx *Indexer) Index(fsys fs.FS, path string, realname string, actions []string, digestAlgs []checksum.DigestAlgorithm, writer io.Writer, logger zLogger.ZLogger) (*indexer.ResultV2, map[checksum.DigestAlgorithm]string, error) {
 	if realname == "" {

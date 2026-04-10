@@ -36,7 +36,7 @@ func TestActionJSON_Stream(t *testing.T) {
 	}
 
 	// NewActionJSON normalisiert Felder intern auf Kleinschreibung
-	action := NewActionJSON("test-json", formats, nil, ad)
+	action := NewActionJSON("test-json", formats, ad)
 	aj := action.(*ActionJSON)
 
 	tests := []struct {

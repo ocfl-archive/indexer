@@ -1,15 +1,14 @@
-[Indexer]
 Enabled=true
 # Enable this, if there are problem detecting length of audio files with ffmpeg
 LocalCache=false
 
-[Indexer.Checksum]
-Enabled=true
+[Checksum]
+Enabled=false
 Digest=["sha512"]
 
-[Indexer.JSON]
+[JSON]
 Enabled=true
-[Indexer.JSON.Format.CSL]
+[JSON.Format.CSL]
 Type = "bibliography"
 Subtype = "csljson"
 Mime = "application/vnd.citationstyles.style+json"
@@ -122,28 +121,28 @@ OptionalFields = [
 ]
 NumOptionals = 3
 
-[Indexer.XML]
+[XML]
 Enabled=true
-[Indexer.XML.Format.FineReader10]
+[XML.Format.FineReader10]
 Element = "document"
 Attributes.xmlns = "http://www.abbyy.com/FineReader_xml/FineReader10-schema-v1.xml"
 Type = "ocr"
 Subtype = "FineReader10"
 Mime = "application/xml"
-[Indexer.XML.Format.CSLXML]
+[XML.Format.CSLXML]
 Element = "style"
 Attributes.xmlns = "http://purl.org/net/xbiblio/csl"
 Type = "bibliography"
 Subtype = "cslxml"
 Mime = "application/vnd.citationstyles.style+xml"
-[Indexer.XML.Format.mets]
+[XML.Format.mets]
 Element = "mets:mets"
 Regexp = true
 Attributes."xmlns:mets" = "^https?://www.loc.gov/METS/?$"
 Type = "metadata"
 Subtype = "METS"
 Mime = "application/xml"
-[Indexer.XML.Format.mei]
+[XML.Format.mei]
 Element = "mei"
 Attributes.xmlns = "http://www.music-encoding.org/ns/mei"
 Type = "audio"
@@ -151,25 +150,25 @@ Subtype = "mei"
 Mime = "application/xml"
 
 
-[Indexer.Siegfried]
+[Siegfried]
 Enabled=true
 #Signature = "/usr/share/siegfried/default.sig"
 #Signature = "file://C:/Users/micro/siegfried/default.sig"
 Signature = "internal"
 
 # mapping of pronom id to types
-[Indexer.Siegfried.TypeMap."fmt/483"]
+[Siegfried.TypeMap."fmt/483"]
 Type = "text"
 Subtype = "epub"
-[Indexer.Siegfried.TypeMap."fmt/158"]
+[Siegfried.TypeMap."fmt/158"]
 Type = "text"
 Subtype = "pdf"
-[Indexer.Siegfried.TypeMap."fmt/1840"]
+[Siegfried.TypeMap."fmt/1840"]
 Type = "archive"
 Subtype = "wacz"
 
 # mapping of pronom id to mimetype if not found in siegfried
-[Indexer.Siegfried.MimeMap]
+[Siegfried.MimeMap]
 "fmt/1840" = "application/x-wacz"
 "x-fmt/92" = "image/psd"
 "fmt/134" = "audio/mp3"
@@ -195,73 +194,73 @@ Subtype = "wacz"
 # relevance < 100: rate down
 # relevance > 100: rate up
 # default = 100
-[Indexer.MimeRelevance.1]
+[MimeRelevance.1]
 Regexp = "^application/octet-stream"
 Weight = 1
-[Indexer.MimeRelevance.2]
+[MimeRelevance.2]
 Regexp = "^text/plain"
 Weight = 3
-[Indexer.MimeRelevance.3]
+[MimeRelevance.3]
 Regexp = "^audio/mpeg"
 Weight = 6
-[Indexer.MimeRelevance.4]
+[MimeRelevance.4]
 Regexp = "^video/mpeg"
 Weight = 5
-[Indexer.MimeRelevance.5]
+[MimeRelevance.5]
 Regexp = "^application/vnd\\..+"
 Weight = 4
-[Indexer.MimeRelevance.6]
+[MimeRelevance.6]
 Regexp = "^application/rtf"
 Weight = 4
-[Indexer.MimeRelevance.7]
+[MimeRelevance.7]
 Regexp = "^application/.+"
 Weight = 2
-[Indexer.MimeRelevance.8]
+[MimeRelevance.8]
 Regexp = "^text/.+"
 Weight = 4
-[Indexer.MimeRelevance.9]
+[MimeRelevance.9]
 Regexp = "^audio/.+"
 Weight = 5
-[Indexer.MimeRelevance.10]
+[MimeRelevance.10]
 Regexp = "^video/.+"
 Weight = 4
-[Indexer.MimeRelevance.11]
+[MimeRelevance.11]
 Regexp = "^.+/x-.+"
 Weight = 80
 
-[Indexer.FFMPEG]
-ffprobe = "ffprobe.exe"
+[FFMPEG]
+ffprobe = ""
 wsl = false  # true, if executable is within linux subsystem on windows
 timeout = "25s"
 online = true
 enabled = true
-[[Indexer.FFMPEG.Mime]]
+[[FFMPEG.Mime]]
 video = false
 audio = true
 format = "mov,mp4,m4a,3gp,3g2,mj2"
 mime = "audio/mp4"
-[[Indexer.FFMPEG.Mime]]
+[[FFMPEG.Mime]]
 video = true
 audio = true
 format = "mov,mp4,m4a,3gp,3g2,mj2"
 mime = "video/mp4"
-[[Indexer.FFMPEG.Mime]]
+[[FFMPEG.Mime]]
 video = true
 audio = false
 format = "mov,mp4,m4a,3gp,3g2,mj2"
 mime = "video/mp4"
 
-[Indexer.ImageMagick]
-identify = "C:/msys64/mingw64/bin/identify.exe"
-convert = "C:/msys64/mingw64/bin/convert.exe"
+[ImageMagick]
+identify = ""
+convert = ""
 wsl = false  # true, if executable is within linux subsystem on windows
 timeout = "480s"
 online = true
 enabled = true
 
-[Indexer.Tika]
-addressMeta = "http://localhost:9998/meta"
-addressFulltext = "http://localhost:9998/tika"
+[Tika]
+addressMeta = ""
+#addressFulltext = "http://localhost:9998/tika"
 #address = "http://localhost:9998/rmeta/text"
 timeout = "10s"
 regexpMimeFulltext = "^application/(pdf|vnd\\.oasis.opendocument.+|vnd\\.openxmlformats.+|vnd\\.ms-.+)" # "^.*$" # ""^application/.*$"  # regexp for mimetype, which are used for tika queries

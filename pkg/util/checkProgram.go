@@ -9,6 +9,12 @@ import (
 	"strings"
 )
 
+const CheckProgramMagickConvert = "magickconvert"
+const CheckProgramMagickIdentify = "magickidentify"
+const CheckProgramFFProbe = "ffprobe"
+const CheckProgramFFMpeg = "ffmpeg"
+const CheckProgramTika = "tika"
+
 type checkProgramStruct struct {
 	Name   []string
 	Param  []string
@@ -33,12 +39,16 @@ func doCheck(prg string, params []string, resultRegex *regexp.Regexp) (string, b
 	return "", false
 }
 
-func checkProgram(command string) (string, bool) {
+func checkProgram(command, guess string) (string, bool) {
 	pw, ok := checkProgramList[command]
 	if !ok {
 		return "", false
 	}
-	for _, name := range pw.Name {
+	names := pw.Name
+	if guess != "" {
+		names = append([]string{guess}, names...)
+	}
+	for _, name := range names {
 		nameParts := strings.Split(name, " ")
 		prg := nameParts[0]
 		params := []string{}

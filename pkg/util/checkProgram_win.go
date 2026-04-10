@@ -7,22 +7,22 @@ import (
 )
 
 var checkProgramList = map[string]checkProgramStruct{
-	"magickconvert": {
+	CheckProgramMagickConvert: {
 		Name:   []string{"magick.exe convert", "convert.exe"},
 		Param:  []string{"-version"},
 		Result: regexp.MustCompile("^Version: ImageMagick "),
 	},
-	"magickidentify": {
+	CheckProgramMagickIdentify: {
 		Name:   []string{"magick.exe identify", "identify.exe"},
 		Param:  []string{"-version"},
 		Result: regexp.MustCompile("^Version: ImageMagick "),
 	},
-	"ffprobe": {
+	CheckProgramFFProbe: {
 		Name:   []string{"ffprobe.exe"},
 		Param:  []string{"-version"},
 		Result: regexp.MustCompile("^ffprobe version "),
 	},
-	"ffmpeg": {
+	CheckProgramFFMpeg: {
 		Name:   []string{"ffmpeg.exe"},
 		Param:  []string{"-version"},
 		Result: regexp.MustCompile("^ffmpeg version "),

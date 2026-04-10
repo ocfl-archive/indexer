@@ -14,10 +14,12 @@
 package main
 
 import (
-	"github.com/BurntSushi/toml"
-	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 	"log"
 	"os"
+
+	"github.com/BurntSushi/toml"
+	"github.com/je4/utils/v2/pkg/stashconfig"
+	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 )
 
 type SFTP struct {
@@ -28,9 +30,6 @@ type SFTP struct {
 
 type Config struct {
 	ErrorTemplate string
-	Logfile       string
-	Loglevel      string
-	LogFormat     string
 	AccessLog     string
 	CertPEM       string
 	KeyPEM        string
@@ -40,13 +39,17 @@ type Config struct {
 	JwtAlg        []string
 	SFTP          SFTP
 	Indexer       *indexer.IndexerConfig
+	Log           stashconfig.Config `toml:"log"`
 }
 
 func LoadConfig(fp string) *Config {
 	var conf = &Config{
-		LogFormat:    `%{time:2006-01-02T15:04:05.000} %{shortpkg}::%{longfunc} [%{shortfile}] > %{level:.5s} - %{message}`,
 		InsecureCert: false,
 		Indexer:      indexer.GetDefaultConfig(),
+	}
+
+	if fp == "" {
+		return conf
 	}
 
 	if _, err := toml.DecodeFile(fp, conf); err != nil {

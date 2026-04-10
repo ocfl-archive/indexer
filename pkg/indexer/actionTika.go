@@ -15,17 +15,17 @@ package indexer
 
 import (
 	"context"
-	"emperror.dev/errors"
 	"encoding/json"
 	"fmt"
 	"io"
 	"math"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"strconv"
 	"time"
+
+	"emperror.dev/errors"
 )
 
 // java -jar tika-server-1.24.jar -enableUnsecureFeatures -enableFileUrl --port=9997
@@ -37,7 +37,6 @@ type ActionTika struct {
 	regexpMime    *regexp.Regexp
 	regexpMimeNot *regexp.Regexp
 	caps          ActionCapability
-	server        *Server
 	field         string
 }
 
@@ -51,7 +50,7 @@ func (at *ActionTika) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
-func NewActionTika(name, uri string, timeout time.Duration, regexpMime, regexpMimeNot, field string, online bool, server *Server, ad *ActionDispatcher) Action {
+func NewActionTika(name, uri string, timeout time.Duration, regexpMime, regexpMimeNot, field string, online bool, ad *ActionDispatcher) Action {
 	var caps ActionCapability = ACTFILEHEAD
 	if online {
 		caps |= ACTALLPROTO
@@ -61,7 +60,6 @@ func NewActionTika(name, uri string, timeout time.Duration, regexpMime, regexpMi
 		url:     uri,
 		timeout: timeout,
 		caps:    caps,
-		server:  server,
 		field:   field,
 	}
 	if regexpMime != "" {
@@ -211,81 +209,6 @@ func (at *ActionTika) DoV2(filename string) (*ResultV2, error) {
 		}
 	}
 	return result, nil
-}
-
-func (at *ActionTika) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	if !at.CanHandle(contentType, uri.String()) {
-		return nil, nil, nil, nil
-	}
-	var dataOut io.Reader
-	var filename string
-	var err error
-	// local files need some adjustments...
-	if uri.Scheme == "file" {
-		filename, err = at.server.fm.Get(uri)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "invalid file uri %s", uri.String())
-		}
-		f, err := os.Open(filename)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "cannot open: %s", filename)
-		}
-		defer f.Close()
-		dataOut = f
-	} else {
-		//		filename = uri.String()
-		resp, err := http.Get(uri.String())
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "cannot load url: %s", uri.String())
-		}
-		defer resp.Body.Close()
-		dataOut = resp.Body
-	}
-
-	client := &http.Client{}
-	ctx, cancel := context.WithTimeout(context.Background(), at.timeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, at.url, dataOut)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "cannot create tika request - %v", at.url)
-	}
-	req.Header.Add("Accept", "application/json")
-	if filename != "" {
-		req.Header.Add("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
-	}
-	//req.Header.Add("fileUrl", uri.String())
-	tresp, err := client.Do(req)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "error in tika request - %v", at.url)
-	}
-	defer tresp.Body.Close()
-	bodyBytes, err := io.ReadAll(tresp.Body)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "error reading body - %v", at.url)
-	}
-
-	if tresp.StatusCode != http.StatusOK {
-		return nil, nil, nil, errors.New(fmt.Sprintf("status not ok - %v -> %v: %s", at.url, tresp.Status, string(bodyBytes)))
-	}
-
-	if bodyBytes[0] == '{' {
-		bodyBytes = append([]byte{'['}, bodyBytes...)
-		bodyBytes = append(bodyBytes, ']')
-	}
-	result := make([]map[string]interface{}, 0)
-	err = json.Unmarshal(bodyBytes, &result)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "error decoding json - %v", string(bodyBytes))
-	}
-	mimetypes := []string{}
-	if len(result) > 0 {
-		if mtype, ok := result[0]["Content-Type"]; ok {
-			if mTypeString, ok := mtype.(string); ok {
-				mimetypes = append(mimetypes, mTypeString)
-			}
-		}
-	}
-	return result, mimetypes, nil, nil
 }
 
 var (

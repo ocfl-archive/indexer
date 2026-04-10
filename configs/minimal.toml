@@ -1,15 +1,176 @@
 [Indexer]
-# --with-indexer
-Enable=true
+Enabled=true
 # Enable this, if there are problem detecting length of audio files with ffmpeg
 LocalCache=false
 
+[Indexer.Checksum]
+Enabled=true
+Digest=["sha512"]
+
+[Indexer.JSON]
+Enabled=true
+[Indexer.JSON.Format.CSL]
+Type = "bibliography"
+Subtype = "csljson"
+Mime = "application/vnd.citationstyles.style+json"
+MandatoryFields = [
+    "id",
+    "type"
+]
+OptionalFields = [
+    "DOI",
+    "ISBN",
+    "ISSN",
+    "PMCID",
+    "PMID",
+    "URL",
+    "abstract",
+    "accessed",
+    "annote",
+    "archive",
+    "archive-place",
+    "archive_collection",
+    "archive_location",
+    "author",
+    "authority",
+    "available-date",
+    "call-number",
+    "categories",
+    "chair",
+    "chapter-number",
+    "citation-key",
+    "citation-label",
+    "citation-number",
+    "collection-editor",
+    "collection-number",
+    "collection-title",
+    "compiler",
+    "composer",
+    "container-author",
+    "container-title",
+    "container-title-short",
+    "contributor",
+    "curator",
+    "custom",
+    "dimensions",
+    "director",
+    "division",
+    "edition",
+    "editor",
+    "editorial-director",
+    "event",
+    "event-date",
+    "event-place",
+    "event-title",
+    "executive-producer",
+    "first-reference-note-number",
+    "genre",
+    "guest",
+    "host",
+    "illustrator",
+    "interviewer",
+    "issue",
+    "issued",
+    "journalAbbreviation",
+    "jurisdiction",
+    "keyword",
+    "language",
+    "locator",
+    "medium",
+    "narrator",
+    "note",
+    "number",
+    "number-of-pages",
+    "number-of-volumes",
+    "organizer",
+    "original-author",
+    "original-date",
+    "original-publisher",
+    "original-publisher-place",
+    "original-title",
+    "page",
+    "page-first",
+    "part",
+    "part-title",
+    "performer",
+    "printing",
+    "producer",
+    "publisher",
+    "publisher-place",
+    "recipient",
+    "references",
+    "reviewed-author",
+    "reviewed-genre",
+    "reviewed-title",
+    "scale",
+    "script-writer",
+    "section",
+    "series-creator",
+    "shortTitle",
+    "source",
+    "status",
+    "submitted",
+    "supplement",
+    "title",
+    "title-short",
+    "translator",
+    "version",
+    "volume",
+    "volume-title",
+    "volume-title-short",
+    "year-suffix"
+]
+NumOptionals = 3
+
+[Indexer.XML]
+Enabled=true
+[Indexer.XML.Format.FineReader10]
+Element = "document"
+Attributes.xmlns = "http://www.abbyy.com/FineReader_xml/FineReader10-schema-v1.xml"
+Type = "ocr"
+Subtype = "FineReader10"
+Mime = "application/xml"
+[Indexer.XML.Format.CSLXML]
+Element = "style"
+Attributes.xmlns = "http://purl.org/net/xbiblio/csl"
+Type = "bibliography"
+Subtype = "cslxml"
+Mime = "application/vnd.citationstyles.style+xml"
+[Indexer.XML.Format.mets]
+Element = "mets:mets"
+Regexp = true
+Attributes."xmlns:mets" = "^https?://www.loc.gov/METS/?$"
+Type = "metadata"
+Subtype = "METS"
+Mime = "application/xml"
+[Indexer.XML.Format.mei]
+Element = "mei"
+Attributes.xmlns = "http://www.music-encoding.org/ns/mei"
+Type = "audio"
+Subtype = "mei"
+Mime = "application/xml"
+
+
 [Indexer.Siegfried]
+Enabled=true
 #Signature = "/usr/share/siegfried/default.sig"
-Signature = "C:/Users/micro/siegfried/default.sig"
+#Signature = "file://C:/Users/micro/siegfried/default.sig"
+Signature = "internal"
+
+# mapping of pronom id to types
+[Indexer.Siegfried.TypeMap."fmt/483"]
+Type = "text"
+Subtype = "epub"
+[Indexer.Siegfried.TypeMap."fmt/158"]
+Type = "text"
+Subtype = "pdf"
+[Indexer.Siegfried.TypeMap."fmt/1840"]
+Type = "archive"
+Subtype = "wacz"
 
 # mapping of pronom id to mimetype if not found in siegfried
 [Indexer.Siegfried.MimeMap]
+"fmt/1840" = "application/x-wacz"
 "x-fmt/92" = "image/psd"
 "fmt/134" = "audio/mp3"
 "x-fmt/184" = "image/x-sun-raster"
@@ -69,7 +230,7 @@ Regexp = "^.+/x-.+"
 Weight = 80
 
 [Indexer.FFMPEG]
-ffprobe = "C:/Users/micro/Downloads/ffmpeg-5.1.2-full_build/bin/ffprobe.exe"
+ffprobe = "ffprobe.exe"
 wsl = false  # true, if executable is within linux subsystem on windows
 timeout = "25s"
 online = true
@@ -91,8 +252,8 @@ format = "mov,mp4,m4a,3gp,3g2,mj2"
 mime = "video/mp4"
 
 [Indexer.ImageMagick]
-identify = "C:/Program Files/ImageMagick-7.1.0-Q16/identify.exe"
-convert = "C:/Program Files/ImageMagick-7.1.0-Q16/convert.exe"
+identify = "C:/msys64/mingw64/bin/identify.exe"
+convert = "C:/msys64/mingw64/bin/convert.exe"
 wsl = false  # true, if executable is within linux subsystem on windows
 timeout = "480s"
 online = true
@@ -109,4 +270,3 @@ regexpMimeMeta = ""
 regexpMimeMetaNot = "^(image|video|audio)/.*$"
 online = true
 enabled = true
-

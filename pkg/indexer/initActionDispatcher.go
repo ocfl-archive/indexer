@@ -66,86 +66,32 @@ func InitActionDispatcher(fss map[string]fs.FS, conf IndexerConfig, logger zLogg
 
 	configErrorFactory(logger)
 
-	_ = NewActionSiegfried(
-		NameSiegfried,
-		signatureData,
-		conf.Siegfried.MimeMap,
-		conf.Siegfried.TypeMap,
-		nil,
-		actionDispatcher,
-		0,
-	)
+	_ = NewActionSiegfried(NameSiegfried, signatureData, conf.Siegfried.MimeMap, conf.Siegfried.TypeMap, actionDispatcher, 0)
 	logStartup(logger, NameSiegfried)
 	if conf.XML.Enabled {
-		_ = NewActionXML(
-			NameXML,
-			conf.XML.Format,
-			nil,
-			actionDispatcher,
-		)
+		_ = NewActionXML(NameXML, conf.XML.Format, actionDispatcher)
 		logStartup(logger, NameXML)
 	}
 	if conf.JSON.Enabled {
-		_ = NewActionJSON(
-			NameJSON,
-			conf.JSON.Format,
-			nil,
-			actionDispatcher,
-		)
+		_ = NewActionJSON(NameJSON, conf.JSON.Format, actionDispatcher)
 		logStartup(logger, NameJSON)
 	}
 	if conf.Checksum.Enabled {
-		_ = NewActionChecksum(
-			NameChecksum,
-			conf.Checksum.Digest,
-			nil,
-			actionDispatcher,
-		)
+		_ = NewActionChecksum(NameChecksum, conf.Checksum.Digest, actionDispatcher)
 		logStartup(logger, NameChecksum)
 	}
 	if conf.FFMPEG.Enabled {
-		_ = NewActionFFProbe(
-			NameFFProbe,
-			conf.FFMPEG.FFProbe,
-			conf.FFMPEG.Wsl,
-			conf.FFMPEG.Timeout.Duration,
-			conf.FFMPEG.Online,
-			conf.FFMPEG.Mime,
-			nil,
-			actionDispatcher)
+		_ = NewActionFFProbe(NameFFProbe, conf.FFMPEG.FFProbe, conf.FFMPEG.Wsl, conf.FFMPEG.Timeout.Duration, conf.FFMPEG.Online, conf.FFMPEG.Mime, actionDispatcher)
 		logStartup(logger, NameFFProbe)
 	}
 	if conf.ImageMagick.Enabled {
-		_ = NewActionIdentifyV2(
-			NameIdentify,
-			conf.ImageMagick.Identify,
-			conf.ImageMagick.Convert,
-			conf.ImageMagick.Wsl,
-			conf.ImageMagick.Timeout.Duration,
-			conf.ImageMagick.Online, nil, actionDispatcher)
+		_ = NewActionIdentifyV2(NameIdentify, conf.ImageMagick.Identify, conf.ImageMagick.Convert, conf.ImageMagick.Wsl, conf.ImageMagick.Timeout.Duration, conf.ImageMagick.Online, actionDispatcher)
 		logStartup(logger, NameIdentify)
 	}
 	if conf.Tika.Enabled {
-		_ = NewActionTika(
-			NameTika,
-			conf.Tika.AddressMeta,
-			conf.Tika.Timeout.Duration,
-			conf.Tika.RegexpMimeMeta,
-			conf.Tika.RegexpMimeMetaNot,
-			"",
-			conf.Tika.Online,
-			nil, actionDispatcher)
+		_ = NewActionTika(NameTika, conf.Tika.AddressMeta, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeMeta, conf.Tika.RegexpMimeMetaNot, "", conf.Tika.Online, actionDispatcher)
 		logStartup(logger, NameTika)
-		_ = NewActionTika(
-			NameFullText,
-			conf.Tika.AddressFulltext,
-			conf.Tika.Timeout.Duration,
-			conf.Tika.RegexpMimeFulltext,
-			conf.Tika.RegexpMimeFulltextNot,
-			"X-TIKA:content",
-			conf.Tika.Online,
-			nil,
-			actionDispatcher)
+		_ = NewActionTika(NameFullText, conf.Tika.AddressFulltext, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, actionDispatcher)
 		logStartup(logger, NameFullText)
 	}
 

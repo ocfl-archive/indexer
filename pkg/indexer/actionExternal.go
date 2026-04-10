@@ -19,17 +19,11 @@
 package indexer
 
 import (
-	"emperror.dev/errors"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"path/filepath"
 	"regexp"
-	"strings"
-	"time"
+
+	"emperror.dev/errors"
 )
 
 type ExternalActionCalltype uint
@@ -59,12 +53,23 @@ func (a *ExternalActionCalltype) UnmarshalText(text []byte) error {
 	return nil
 }
 
+func NewActionExternal(name, address string, capability ActionCapability, callType ExternalActionCalltype, mimetype string, ad *ActionDispatcher) Action {
+	ae := &ActionExternal{
+		name:       name,
+		url:        address,
+		capability: capability,
+		callType:   callType,
+		mimetype:   regexp.MustCompile(mimetype),
+	}
+	ad.RegisterAction(ae)
+	return ae
+}
+
 type ActionExternal struct {
 	name       string
 	url        string
 	capability ActionCapability
 	callType   ExternalActionCalltype
-	server     *Server
 	mimetype   *regexp.Regexp
 }
 
@@ -81,19 +86,6 @@ func (as *ActionExternal) Stream(contentType string, reader io.Reader, filename 
 	return nil, errors.New("external actions does not support streaming")
 }
 
-func NewActionExternal(name, address string, capability ActionCapability, callType ExternalActionCalltype, mimetype string, server *Server, ad *ActionDispatcher) Action {
-	ae := &ActionExternal{
-		name:       name,
-		url:        address,
-		capability: capability,
-		callType:   callType,
-		mimetype:   regexp.MustCompile(mimetype),
-		server:     server,
-	}
-	ad.RegisterAction(ae)
-	return ae
-}
-
 func (as *ActionExternal) GetWeight() uint {
 	return 100
 }
@@ -104,61 +96,6 @@ func (as *ActionExternal) GetCaps() ActionCapability {
 
 func (as *ActionExternal) GetName() string {
 	return as.name
-}
-
-func (as *ActionExternal) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	switch uri.Scheme {
-	case "file":
-		if as.capability&ACTFILE != ACTFILE {
-			return nil, nil, nil, fmt.Errorf("invalid capability for file url scheme")
-		}
-	case "http":
-		if as.capability&ACTHTTP != ACTHTTP {
-			return nil, nil, nil, fmt.Errorf("invalid capability for http url scheme")
-		}
-	case "https":
-		if as.capability&ACTHTTPS != ACTHTTPS {
-			return nil, nil, nil, fmt.Errorf("invalid capability for https url scheme")
-		}
-	}
-
-	if !as.mimetype.MatchString(contentType) {
-		return nil, nil, nil, ErrMimeNotApplicable
-	}
-
-	var resp *http.Response
-	if as.callType == EACTURL {
-		filename, err := as.server.fm.Get(uri)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "no file url")
-		}
-		urlstring := strings.Replace(as.url, "[[PATH]]", strings.Replace(url.PathEscape(filepath.ToSlash(filename)), "+", "%20", -1), -1)
-
-		resp, err = http.Get(urlstring)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "cannot query %v - %v", as.name, urlstring)
-		}
-	} else if as.callType == EACTJSONPOST {
-		return nil, nil, nil, fmt.Errorf("JSONPOST CallType not implemented")
-	} else {
-		return nil, nil, nil, fmt.Errorf("unknown calltype")
-	}
-	defer resp.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "error reading body")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, nil, nil, errors.New(fmt.Sprintf("status not ok - %v: %s", resp.Status, string(bodyBytes)))
-	}
-
-	var result interface{}
-	err = json.Unmarshal(bodyBytes, &result)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "error decoding json - %v", string(bodyBytes))
-	}
-	return result, nil, nil, nil
 }
 
 var (

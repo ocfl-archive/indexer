@@ -2,23 +2,22 @@ package indexer
 
 import (
 	"bufio"
-	"emperror.dev/errors"
 	"fmt"
-	xmlparser "github.com/tamerh/xml-stream-parser"
 	"io"
 	"log"
 	"mime"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
-	"time"
+
+	"emperror.dev/errors"
+	xmlparser "github.com/tamerh/xml-stream-parser"
 )
 
 type ActionXML struct {
-	server         *Server
+	//server         *Server
 	name           string
 	format         map[string]ConfigXMLFormat
 	compiledRegexp map[string]map[string]*regexp.Regexp
@@ -39,8 +38,11 @@ func (as *ActionXML) CanHandle(contentType string, filename string) bool {
 	return false
 }
 
-func NewActionXML(name string, format map[string]ConfigXMLFormat, server *Server, ad *ActionDispatcher) Action {
-	as := &ActionXML{name: name, format: map[string]ConfigXMLFormat{}, server: server}
+func NewActionXML(name string, format map[string]ConfigXMLFormat, ad *ActionDispatcher) Action {
+	as := &ActionXML{
+		name:   name,
+		format: map[string]ConfigXMLFormat{},
+	}
 	// allow old config with element as key
 	for key, value := range format {
 		if value.Element == "" {
@@ -167,25 +169,6 @@ func (as *ActionXML) DoV2(filename string) (*ResultV2, error) {
 	}
 	defer reader.Close()
 	return as.Stream("", reader, filename)
-}
-
-func (as *ActionXML) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	filename, err := as.server.fm.Get(uri)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "no file url")
-	}
-
-	fp, err := os.OpenFile(filename, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "cannot open file %s", filename)
-	}
-	defer fp.Close()
-
-	result, err := as.Stream("", fp, filename)
-	if err != nil {
-		return nil, nil, nil, errors.WithStack(err)
-	}
-	return result.Metadata[as.GetName()], result.Mimetypes, result.Pronoms, nil
 }
 
 var (

@@ -1,12 +1,11 @@
 package indexer
 
 import (
+	"io"
+	"os"
+
 	"emperror.dev/errors"
 	"github.com/je4/utils/v2/pkg/checksum"
-	"io"
-	"net/url"
-	"os"
-	"time"
 )
 
 // Copyright 2021 Juergen Enge, info-age GmbH, Basel. All rights reserved.
@@ -25,7 +24,6 @@ import (
 
 type ActionChecksum struct {
 	name    string
-	server  *Server
 	digests []checksum.DigestAlgorithm
 }
 
@@ -33,8 +31,8 @@ func (as *ActionChecksum) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
-func NewActionChecksum(name string, digests []checksum.DigestAlgorithm, server *Server, ad *ActionDispatcher) Action {
-	as := &ActionChecksum{name: name, server: server, digests: digests}
+func NewActionChecksum(name string, digests []checksum.DigestAlgorithm, ad *ActionDispatcher) Action {
+	as := &ActionChecksum{name: name, digests: digests}
 	ad.RegisterAction(as)
 	return as
 }
@@ -93,25 +91,6 @@ func (as *ActionChecksum) DoV2(filename string) (*ResultV2, error) {
 	var result = NewResultV2()
 	result.Metadata[as.GetName()] = checksums
 	return result, nil
-}
-
-func (as *ActionChecksum) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	filename, err := as.server.fm.Get(uri)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "no file url")
-	}
-
-	fp, err := os.OpenFile(filename, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "cannot open file %s", filename)
-	}
-	defer fp.Close()
-
-	result, err := as.Stream("", fp, filename)
-	if err != nil {
-		return nil, nil, nil, errors.WithStack(err)
-	}
-	return result.Metadata[as.GetName()], result.Mimetypes, result.Pronoms, nil
 }
 
 var (

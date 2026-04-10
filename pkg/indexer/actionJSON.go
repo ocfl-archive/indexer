@@ -4,18 +4,15 @@ import (
 	"io"
 	"mime"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"emperror.dev/errors"
 )
 
 type ActionJSON struct {
-	server *Server
 	name   string
 	format map[string]ConfigJSONFormat
 }
@@ -35,11 +32,10 @@ func (as *ActionJSON) CanHandle(contentType string, filename string) bool {
 	return false
 }
 
-func NewActionJSON(name string, format map[string]ConfigJSONFormat, server *Server, ad *ActionDispatcher) Action {
+func NewActionJSON(name string, format map[string]ConfigJSONFormat, ad *ActionDispatcher) Action {
 	as := &ActionJSON{
 		name:   name,
 		format: map[string]ConfigJSONFormat{},
-		server: server,
 	}
 	for key, value := range format {
 		var mandatoryFields []string
@@ -139,29 +135,12 @@ func (as *ActionJSON) DoV2(filename string) (*ResultV2, error) {
 		return nil, errors.Wrapf(err, "cannot read file '%s'", filename)
 	}
 	contentType := http.DetectContentType(head[:n])
+	parts := strings.Split(contentType, ";")
+	contentType = parts[0]
 	if _, err := reader.Seek(0, io.SeekStart); err != nil {
 		return nil, errors.Wrapf(err, "cannot seek to start of file '%s'", filename)
 	}
 	return as.Stream(contentType, reader, filename)
-}
-
-func (as *ActionJSON) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	filename, err := as.server.fm.Get(uri)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "no file url")
-	}
-
-	fp, err := os.OpenFile(filename, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "cannot open file %s", filename)
-	}
-	defer fp.Close()
-
-	result, err := as.Stream("", fp, filename)
-	if err != nil {
-		return nil, nil, nil, errors.WithStack(err)
-	}
-	return result.Metadata[as.GetName()], result.Mimetypes, result.Pronoms, nil
 }
 
 var (

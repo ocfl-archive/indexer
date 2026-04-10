@@ -17,11 +17,9 @@ import (
 	"bytes"
 	"io"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"emperror.dev/errors"
 	"github.com/richardlehane/siegfried"
@@ -29,10 +27,10 @@ import (
 )
 
 type ActionSiegfried struct {
-	name          string
-	sf            *siegfried.Siegfried
-	mimeMap       map[string]string
-	server        *Server
+	name    string
+	sf      *siegfried.Siegfried
+	mimeMap map[string]string
+	//	server        *Server
 	typeMap       map[string]TypeSubtype
 	signatureData []byte
 	sfPool        sync.Pool
@@ -42,7 +40,7 @@ func (as *ActionSiegfried) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
-func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]string, typeMap map[string]TypeSubtype, server *Server, ad *ActionDispatcher, streamSize int) Action {
+func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]string, typeMap map[string]TypeSubtype, ad *ActionDispatcher, streamSize int) Action {
 
 	/*
 		sf, err := siegfried.LoadReader(bytes.NewBuffer(signatureData))
@@ -66,9 +64,9 @@ func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]st
 	as := &ActionSiegfried{
 		name: name,
 		//sf:            sf,
-		mimeMap:       mimeMap,
-		typeMap:       typeMap,
-		server:        server,
+		mimeMap: mimeMap,
+		typeMap: typeMap,
+		//		server:        server,
 		signatureData: signatureData,
 		sfPool:        pool,
 	}
@@ -165,25 +163,6 @@ func (as *ActionSiegfried) DoV2(filename string) (*ResultV2, error) {
 	result.Metadata[as.GetName()] = ident
 
 	return result, nil
-}
-
-func (as *ActionSiegfried) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	filename, err := as.server.fm.Get(uri)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "no file url")
-	}
-
-	fp, err := os.OpenFile(filename, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "cannot open file %s", filename)
-	}
-	defer fp.Close()
-
-	result, err := as.Stream("", fp, filename)
-	if err != nil {
-		return nil, nil, nil, errors.WithStack(err)
-	}
-	return result.Metadata[as.GetName()], result.Mimetypes, result.Pronoms, nil
 }
 
 var (

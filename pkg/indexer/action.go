@@ -14,11 +14,11 @@
 package indexer
 
 import (
-	"emperror.dev/errors"
 	"fmt"
 	"io"
-	"net/url"
-	"time"
+	"regexp"
+
+	"emperror.dev/errors"
 )
 
 type ActionCapability uint
@@ -69,8 +69,17 @@ type Action interface {
 	Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error)
 	DoV2(filename string) (*ResultV2, error)
 	CanHandle(contentType string, filename string) bool
-	Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error)
+	//Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error)
 	GetName() string
 	GetCaps() ActionCapability
 	GetWeight() uint
+}
+
+type MimeWeightString struct {
+	Regexp string
+	Weight int
+}
+type MimeWeight struct {
+	regexp *regexp.Regexp
+	weight int
 }

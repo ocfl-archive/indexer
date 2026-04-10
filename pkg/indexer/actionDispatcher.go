@@ -4,9 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"cmp"
-	"emperror.dev/errors"
-	iou "github.com/je4/utils/v2/pkg/io"
-	"golang.org/x/exp/slices"
 	"io"
 	"net/http"
 	"os"
@@ -14,6 +11,10 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"emperror.dev/errors"
+	iou "github.com/je4/utils/v2/pkg/io"
+	"golang.org/x/exp/slices"
 )
 
 type ActionDispatcher struct {
@@ -94,7 +95,7 @@ func (ad *ActionDispatcher) Stream(sourceReader io.Reader, stateFiles []string, 
 			if actionStr == action.GetName() && action.GetCaps()&ACTSTREAM != 0 {
 				found = true
 				if contentType != "applictation/octet-stream" && !action.CanHandle(contentType, stateFiles[0]) {
-					continue
+					break
 				}
 				wg.Add(1)
 				pr, pw := io.Pipe()
@@ -114,6 +115,7 @@ func (ad *ActionDispatcher) Stream(sourceReader io.Reader, stateFiles []string, 
 					// discard remaining data
 					_, _ = io.Copy(io.Discard, actionReader)
 				}(iou.NewReadIgnoreCloser(pr), action)
+				break
 			}
 		}
 		if !found {

@@ -30,6 +30,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/BurntSushi/toml"
 	"github.com/je4/utils/v2/pkg/stashconfig"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 )
 
@@ -38,47 +39,49 @@ type Config struct {
 	Log     stashconfig.Config `toml:"log"`
 }
 
-func OptimizeConfig(conf *indexer.IndexerConfig) error {
+func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
 	if conf.Siegfried.SignatureFile == "" {
-		user, err := user.Current()
+		current, err := user.Current()
 		if err != nil {
 			return errors.Wrap(err, "cannot get current user")
 		}
-		fp := filepath.Join(user.HomeDir, "siegfried", "default.sig")
+		fp := filepath.Join(current.HomeDir, "siegfried", "default.sig")
 		fi, err := os.Stat(fp)
 		if err == nil && !fi.IsDir() {
 			conf.Siegfried.SignatureFile = fp
 		} else {
-			conf.Siegfried.SignatureFile = "internal:default"
+			conf.Siegfried.SignatureFile = "internal"
 		}
 	}
 	if conf.FFMPEG.Enabled {
-		if conf.FFMPEG.FFProbe == "" {
-			if ffprobepath, ok := checkProgram("ffprobe"); ok {
-				conf.FFMPEG.FFProbe = ffprobepath
-			} else {
-				conf.FFMPEG.Enabled = false
-			}
+		if ffprobepath, ok := checkProgram(CheckProgramFFProbe, conf.FFMPEG.FFProbe); ok {
+			conf.FFMPEG.FFProbe = ffprobepath
+		} else {
+			conf.FFMPEG.Enabled = false
+		}
+		if conf.FFMPEG.Enabled == false {
+			logger.Info().Msg("FFMPEG disabled")
 		}
 	}
 	if conf.ImageMagick.Enabled {
-		if conf.ImageMagick.Convert == "" {
-			if convertpath, ok := checkProgram("magickconvert"); ok {
-				conf.ImageMagick.Convert = convertpath
-			} else {
-				conf.ImageMagick.Enabled = false
-			}
-			if identifypath, ok := checkProgram("magickidentify"); ok {
-				conf.ImageMagick.Identify = identifypath
-			} else {
-				conf.ImageMagick.Enabled = false
-			}
+		if convertpath, ok := checkProgram(CheckProgramMagickConvert, conf.ImageMagick.Convert); ok {
+			conf.ImageMagick.Convert = convertpath
+		} else {
+			conf.ImageMagick.Enabled = false
+		}
+		if identifypath, ok := checkProgram(CheckProgramMagickIdentify, conf.ImageMagick.Identify); ok {
+			conf.ImageMagick.Identify = identifypath
+		} else {
+			conf.ImageMagick.Enabled = false
+		}
+		if conf.ImageMagick.Enabled == false {
+			logger.Info().Msg("ImageMagick disabled")
 		}
 	}
 	if conf.Tika.Enabled {
 		tikaoptimize := func() error {
 			if conf.Tika.AddressMeta == "" {
-				conf.Tika.AddressMeta = "http://localhost:9998/tika"
+				conf.Tika.AddressMeta = "http://localhost:9998/meta"
 			}
 			baseImage := image.NewRGBA(image.Rect(0, 0, 10, 10))
 			imageBuffer := bytes.NewBuffer(nil)
@@ -126,6 +129,9 @@ func OptimizeConfig(conf *indexer.IndexerConfig) error {
 		if err := tikaoptimize(); err != nil {
 			return errors.Wrap(err, "tikaoptimize")
 		}
+		if conf.Tika.Enabled == false {
+			logger.Info().Msg("Tika disabled")
+		}
 	}
 	return nil
 }
@@ -140,9 +146,6 @@ func LoadConfig(tomlBytes []byte) (*Config, error) {
 
 	if err := toml.Unmarshal(tomlBytes, conf); err != nil {
 		return nil, errors.Wrapf(err, "Error unmarshalling config")
-	}
-	if err := OptimizeConfig(conf.Indexer); err != nil {
-		return nil, errors.Wrap(err, "Error optimizing config")
 	}
 	return conf, nil
 }

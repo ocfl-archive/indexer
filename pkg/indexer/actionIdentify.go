@@ -15,15 +15,7 @@
 package indexer
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"fmt"
 	"io"
-	"net/http"
-	"net/url"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -37,7 +29,6 @@ type ActionIdentify struct {
 	wsl      bool
 	timeout  time.Duration
 	caps     ActionCapability
-	server   *Server
 	mimeMap  map[string]string
 }
 
@@ -54,7 +45,7 @@ func (ai *ActionIdentify) Stream(contentType string, reader io.Reader, filename 
 	return nil, errors.New("identify actions does not support streaming")
 }
 
-func NewActionIdentify(name, identify, convert string, wsl bool, timeout time.Duration, online bool, server *Server, ad *ActionDispatcher) Action {
+func NewActionIdentify(name, identify, convert string, wsl bool, timeout time.Duration, online bool, ad *ActionDispatcher) Action {
 	var caps ActionCapability = ACTFILEHEAD
 	if online {
 		caps |= ACTALLPROTO
@@ -66,7 +57,6 @@ func NewActionIdentify(name, identify, convert string, wsl bool, timeout time.Du
 		wsl:      wsl,
 		timeout:  timeout,
 		caps:     caps,
-		server:   server,
 		mimeMap:  map[string]string{},
 	}
 	if mime, err := GetMagickMime(); err == nil {
@@ -100,133 +90,6 @@ func (ai *ActionIdentify) GetCaps() ActionCapability {
 
 func (ai *ActionIdentify) GetName() string {
 	return ai.name
-}
-
-func (ai *ActionIdentify) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	var metadata = make(map[string]interface{})
-	var metadataInt interface{}
-	//	var metadatalist = []map[string]interface{}{}
-	var filename string
-	var err error
-
-	if !ai.CanHandle(contentType, uri.String()) {
-		return nil, nil, nil, ErrMimeNotApplicable
-	}
-
-	var dataOut io.Reader
-	// local files need some adjustments...
-	if uri.Scheme == "file" {
-		filename, err = ai.server.fm.Get(uri)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "invalid file uri %s", uri.String())
-		}
-		f, err := os.Open(filename)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "cannot open: %s", filename)
-		}
-		defer f.Close()
-		dataOut = f
-	} else {
-		//		filename = uri.String()
-		resp, err := http.Get(uri.String())
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "cannot load url: %s", uri.String())
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			return nil, nil, nil, errors.New(fmt.Sprintf("invalid status %v - %v for %s", resp.StatusCode, resp.StatusCode, uri.String()))
-		}
-		dataOut = resp.Body
-	}
-
-	infile := "-"
-	if t, ok := ai.mimeMap[contentType]; ok {
-		infile = t + ":-"
-	} else {
-		t := strings.TrimPrefix(contentType, "image/")
-		if len(t) > 0 {
-			infile = t + ":-"
-		}
-	}
-	cmdfile := ai.convert
-	cmdparam := []string{}
-	parts := strings.Split(ai.convert, " ")
-	if len(parts) > 1 {
-		cmdparam = append(cmdparam, parts[1:]...)
-	}
-	cmdparam = append(cmdparam, infile, "json:-")
-
-	var out bytes.Buffer
-	out.Grow(1024 * 1024) // 1MB size
-	ctx, cancel := context.WithTimeout(context.Background(), ai.timeout)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, cmdfile, cmdparam...)
-	cmd.Stdin = dataOut
-	cmd.Stdout = &out
-
-	err = cmd.Run()
-	if err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "error executing (%s %s) for file '%s': %v", cmdfile, cmdparam, filename, out.String())
-	}
-
-	var meta = &MagickResult{}
-	if err = json.Unmarshal([]byte(out.String()), &meta); err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "cannot unmarshall metadata: %s", out.String())
-	}
-
-	if err = json.Unmarshal([]byte(out.String()), &metadataInt); err != nil {
-		return nil, nil, nil, errors.Wrapf(err, "cannot unmarshall metadata: %s", out.String())
-	}
-
-	switch val := metadataInt.(type) {
-	case []interface{}:
-		// todo: check for content and type
-		if len(val) > 0 {
-			metadata = val[0].(map[string]interface{})
-		} else {
-			return nil, nil, nil, errors.New("empty image magick result list")
-		}
-		/*
-			if len(val) != 1 {
-				return nil, nil, nil, fmt.Errorf("wrong number of objects in image magick result list - %v", len(val))
-			}
-			var ok bool
-			metadata, ok = val[0].(map[string]interface{})
-			if !ok {
-				return nil, nil, nil, fmt.Errorf("wrong object type in image magick result - %T", val[0])
-			}
-		*/
-	case map[string]interface{}:
-		metadata = val
-	default:
-		return nil, nil, nil, fmt.Errorf("invalid return type from image magick - %T", val)
-	}
-
-	_image, ok := metadata["image"]
-	if !ok {
-		return nil, nil, nil, errors.Wrapf(err, "no image field in %s", out.String())
-	}
-	// calculate mimetype and dimensions
-	image, ok := _image.(map[string]interface{})
-	_mimetype, ok := image["mimeType"].(string)
-	mimetypes := []string{}
-	if ok {
-		mimetypes = append(mimetypes, _mimetype)
-	}
-	_geometry, ok := image["geometry"].(map[string]interface{})
-	if ok {
-		w, ok := _geometry["width"].(float64)
-		if ok {
-			*width = uint(w)
-		}
-		h, ok := _geometry["height"].(float64)
-		if ok {
-			*height = uint(h)
-		}
-	}
-
-	return metadata, mimetypes, nil, nil
 }
 
 var (

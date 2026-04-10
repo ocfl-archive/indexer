@@ -7,7 +7,7 @@ import (
 
 func TestCheckProgram_ImageMagickConvert_MagickExe(t *testing.T) {
 	// Aufruf testen
-	got, ok := checkProgram("imagemagickconvert")
+	got, ok := checkProgram(CheckProgramMagickConvert, "")
 	if !ok {
 		fmt.Println("nicht gefunden")
 	}
@@ -16,7 +16,7 @@ func TestCheckProgram_ImageMagickConvert_MagickExe(t *testing.T) {
 
 func TestCheckProgram_FFProbe(t *testing.T) {
 	// Aufruf testen
-	got, ok := checkProgram("ffprobe")
+	got, ok := checkProgram(CheckProgramFFProbe, "")
 	if !ok {
 		fmt.Println("nicht gefunden")
 	}
@@ -25,7 +25,7 @@ func TestCheckProgram_FFProbe(t *testing.T) {
 
 func TestCheckProgram_Ffmpeg(t *testing.T) {
 	// Aufruf testen
-	got, ok := checkProgram("ffmpeg")
+	got, ok := checkProgram(CheckProgramFFMpeg, "")
 	if !ok {
 		fmt.Println("nicht gefunden")
 	}

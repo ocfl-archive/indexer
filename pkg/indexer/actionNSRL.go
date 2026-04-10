@@ -14,16 +14,14 @@
 package indexer
 
 import (
-	"crypto/sha1"
-	"emperror.dev/errors"
 	"encoding/json"
-	"fmt"
+
+	"emperror.dev/errors"
 	badger "github.com/dgraph-io/badger/v4"
 	"github.com/golang/snappy"
+	"github.com/je4/utils/v2/pkg/zLogger"
+
 	"io"
-	"net/url"
-	"os"
-	"time"
 )
 
 const NSRL_OS = "OpSystemCode-"
@@ -31,11 +29,17 @@ const NSRL_PROD = "ProductCode-"
 const NSRL_MFG = "MFgCode-"
 const NSRL_File = "SHA-1-"
 
+func NewActionNSRL(name string, nsrldb *badger.DB, ad *ActionDispatcher, logger zLogger.ZLogger) Action {
+	an := &ActionNSRL{name: name, nsrldb: nsrldb, caps: ACTFILE, logger: logger}
+	ad.RegisterAction(an)
+	return an
+}
+
 type ActionNSRL struct {
 	name   string
 	caps   ActionCapability
-	server *Server
 	nsrldb *badger.DB
+	logger zLogger.ZLogger
 }
 
 func (aNSRL *ActionNSRL) DoV2(filename string) (*ResultV2, error) {
@@ -58,12 +62,6 @@ type ActionNSRLMeta struct {
 	OSMfg   map[string]string
 	Prod    map[string]string
 	ProdMfg map[string]string
-}
-
-func NewActionNSRL(name string, nsrldb *badger.DB, server *Server, ad *ActionDispatcher) Action {
-	an := &ActionNSRL{name: name, nsrldb: nsrldb, server: server, caps: ACTFILE}
-	ad.RegisterAction(an)
-	return an
 }
 
 func (aNSRL *ActionNSRL) GetWeight() uint {
@@ -128,7 +126,7 @@ func (aNSRL *ActionNSRL) getNSRL(sha1sum string) (interface{}, []string, []strin
 			}
 			r, err := getStringMap(txn, NSRL_PROD+file["ProductCode"])
 			if err != nil {
-				aNSRL.server.log.Errorf("cannot get data of %s: %v", NSRL_PROD+file["ProductCode"], err)
+				aNSRL.logger.Error().Msgf("cannot get data of %s: %v", NSRL_PROD+file["ProductCode"], err)
 				// return errors.Wrapf(err, "cannot get data of %s", NSRL_PROD+file["ProductCode"])
 			}
 			if len(r) > 0 {
@@ -142,7 +140,7 @@ func (aNSRL *ActionNSRL) getNSRL(sha1sum string) (interface{}, []string, []strin
 			}
 			r, err = getStringMap(txn, NSRL_OS+file["OpSystemCode"])
 			if err != nil {
-				aNSRL.server.log.Errorf("cannot get data of %s: %v", NSRL_OS+file["OpSystemCode"], err)
+				aNSRL.logger.Error().Msgf("cannot get data of %s: %v", NSRL_OS+file["OpSystemCode"], err)
 				// return errors.Wrapf(err, "cannot get data of %s", NSRL_PROD+file["ProductCode"])
 			}
 			if len(r) > 0 {
@@ -167,62 +165,6 @@ func (aNSRL *ActionNSRL) GetCaps() ActionCapability {
 
 func (aNSRL *ActionNSRL) GetName() string {
 	return aNSRL.name
-}
-
-func (aNSRL *ActionNSRL) Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error) {
-	if checksums == nil {
-		checksums = make(map[string]string)
-	}
-	if _, ok := checksums["SHA-1"]; !ok {
-		filename, err := aNSRL.server.fm.Get(uri)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "no file url")
-		}
-		fp, err := os.Open(filename)
-		if err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "cannot open file %s", filename)
-		}
-		defer fp.Close()
-		hash := sha1.New()
-		if _, err := io.Copy(hash, fp); err != nil {
-			return nil, nil, nil, errors.Wrapf(err, "cannot read %s", filename)
-		}
-		sum := hash.Sum(nil)
-		sumStr := fmt.Sprintf("%X", sum)
-		checksums = make(map[string]string)
-		checksums["SHA-1"] = sumStr
-		//return nil, fmt.Errorf("need checksum (md5) to check nsrl")
-	}
-
-	SHA1sumStr, ok := checksums["SHA-1"]
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("no SHA-1 checksum given to check nsrl")
-	}
-	/*
-		result := make([]map[string]interface{}, 0)
-		if err := aNSRL.nsrldb.View(func(txn *badger.Txn) error {
-			item, err := txn.Get([]byte("SHA-1-"+SHA1sumStr))
-			if err == badger.ErrKeyNotFound {
-				return nil
-			} else if err != nil {
-				return errors.Wrapf(err, "cannot lookup checksum SHA-1-%s", SHA1sumStr)
-			}
-			if err := item.Value(func(val []byte) error {
-				if err := json.Unmarshal(val, &result); err != nil {
-					return errors.Wrapf(err, "cannot unmarshal %s", string(val))
-				}
-				return nil
-			}); err != nil {
-				return errors.Wrapf(err, "cannot get value of nsrl from SHA-1-%s", SHA1sumStr)
-			}
-			return nil
-		}); err != nil {
-			return nil, errors.Wrapf(err, "cannot get entry for SHA-1-%s", sumStr)
-		}
-	*/
-
-	aNSRL.server.log.Infof("NSRL of %s", SHA1sumStr)
-	return aNSRL.getNSRL(SHA1sumStr)
 }
 
 var (

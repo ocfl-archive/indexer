@@ -1,6 +1,7 @@
 Enabled=true
 # Enable this, if there are problem detecting length of audio files with ffmpeg
 LocalCache=false
+Optimize=true
 
 [Checksum]
 Enabled=false

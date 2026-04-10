@@ -38,6 +38,7 @@ func logStartup(logger zLogger.ZLogger, tool string) {
 	).Msg("")
 }
 
+// Deprecated: Use util.InitIndexer instead.
 func InitActionDispatcher(fss map[string]fs.FS, conf IndexerConfig, logger zLogger.ZLogger) (*ActionDispatcher, error) {
 	mimeRelevance, err := stringMapToMimeRelevance(conf.MimeRelevance)
 	if err != nil {

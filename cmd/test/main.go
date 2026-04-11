@@ -3,17 +3,18 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"github.com/je4/filesystem/v3/pkg/vfsrw"
-	"github.com/je4/filesystem/v3/pkg/writefs"
-	"github.com/je4/utils/v2/pkg/zLogger"
-	"github.com/ocfl-archive/indexer/v3/internal"
-	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
-	ublogger "gitlab.switch.ch/ub-unibas/go-ublogger/v2"
-	"go.ub.unibas.ch/cloud/certloader/v2/pkg/loader"
 	"io"
 	"io/fs"
 	"log"
 	"os"
+
+	"github.com/je4/filesystem/v3/pkg/vfsrw"
+	"github.com/je4/filesystem/v3/pkg/writefs"
+	"github.com/je4/utils/v2/pkg/zLogger"
+	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
+	"github.com/ocfl-archive/indexer/v3/pkg/util"
+	ublogger "gitlab.switch.ch/ub-unibas/go-ublogger/v2"
+	"go.ub.unibas.ch/cloud/certloader/v2/pkg/loader"
 )
 
 var config = flag.String("config", "", "path to configuration toml file")
@@ -58,12 +59,16 @@ func main() {
 	l2 := _logger.With().Timestamp().Str("host", hostname).Logger() //.Output(output)
 	var logger zLogger.ZLogger = &l2
 
-	var fss = map[string]fs.FS{"internal": internal.InternalFS}
-
-	ad, err := indexer.InitActionDispatcher(fss, conf.Indexer, logger)
+	ad, _, indexerCloser, err := util.InitIndexer(&conf.Indexer, logger)
+	//ad, err := indexer.InitActionDispatcher(fss, conf.Indexer, logger)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("cannot init action dispatcher")
 	}
+	defer func() {
+		if err := indexerCloser.Close(); err != nil {
+			logger.Error().Err(err).Msg("error closing indexer")
+		}
+	}()
 
 	vfs, err := vfsrw.NewFS(conf.VFS, logger)
 	if err != nil {
@@ -100,7 +105,7 @@ func main() {
 		if err != nil {
 			logger.Fatal().Err(err).Msgf("cannot open %s/%s", folder, file.Name())
 		}
-		result, err := ad.Stream(fp, []string{file.Name()}, []string{"siegfried", "xml", "identify", "ffprobe", "checksum"})
+		result, err := ad.ActionDispatcher().Stream(fp, []string{file.Name()}, []string{indexer.NameSiegfried, indexer.NameXML, indexer.NameIdentify, indexer.NameFFProbe, indexer.NameChecksum})
 		if err != nil {
 			fp.Close()
 			logger.Fatal().Err(err).Msgf("cannot index %s/%s", folder, file.Name())

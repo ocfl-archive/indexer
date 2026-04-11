@@ -30,7 +30,7 @@ func (c _closer) Close() error {
 
 // InitIndexer
 // initializes an ActionDispatcher with Siegfried, ImageMagick, FFPMEG and Tika
-// the actions are named "siegfried", "identify", "ffprobe", "tika" and "fulltext"
+// the actions are named NameSiegfried, NameIdentify, NameFFProbe, NameTika and NameFullText
 func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Indexer, actions []string, closer io.Closer, err error) {
 	actions = []string{}
 	closerList := _closer{}
@@ -66,54 +66,54 @@ func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Index
 				return nil, nil, nil, errors.Wrapf(err, "cannot read siegfried signature file '%s'", conf.Siegfried.SignatureFile)
 			}
 		}
-		_ = indexer.NewActionSiegfried("siegfried", signature, conf.Siegfried.MimeMap, conf.Siegfried.TypeMap, ad.ActionDispatcher(), conf.Siegfried.StreamSize)
+		_ = indexer.NewActionSiegfried(indexer.NameSiegfried, signature, conf.Siegfried.MimeMap, conf.Siegfried.TypeMap, ad.ActionDispatcher(), conf.Siegfried.StreamSize)
 		logger.Info().Msg("indexer action siegfried added")
-		actions = append(actions, "siegfried")
+		actions = append(actions, indexer.NameSiegfried)
 	}
 
 	if conf.XML.Enabled {
-		_ = indexer.NewActionXML("xml", conf.XML.Format, ad.ActionDispatcher())
+		_ = indexer.NewActionXML(indexer.NameXML, conf.XML.Format, ad.ActionDispatcher())
 		logger.Info().Msg("indexer action xml added")
-		actions = append(actions, "xml")
+		actions = append(actions, indexer.NameXML)
 	}
 	if conf.JSON.Enabled {
 		_ = indexer.NewActionJSON(indexer.NameJSON, conf.JSON.Format, ad.ActionDispatcher())
 		logger.Info().Msg("indexer action json added")
-		actions = append(actions, "json")
+		actions = append(actions, indexer.NameJSON)
 	}
 
 	if conf.FFMPEG.Enabled {
-		_ = indexer.NewActionFFProbe("ffprobe", conf.FFMPEG.FFProbe, conf.FFMPEG.Wsl, conf.FFMPEG.Timeout.Duration, conf.FFMPEG.Online, conf.FFMPEG.Mime, ad.ActionDispatcher())
+		_ = indexer.NewActionFFProbe(indexer.NameFFProbe, conf.FFMPEG.FFProbe, conf.FFMPEG.Wsl, conf.FFMPEG.Timeout.Duration, conf.FFMPEG.Online, conf.FFMPEG.Mime, ad.ActionDispatcher())
 		logger.Info().Msg("indexer action ffprobe added")
-		actions = append(actions, "ffprobe")
+		actions = append(actions, indexer.NameFFProbe)
 	}
 	if conf.ImageMagick.Enabled {
-		_ = indexer.NewActionIdentifyV2("identify", conf.ImageMagick.Identify, conf.ImageMagick.Convert, conf.ImageMagick.Wsl, conf.ImageMagick.Timeout.Duration, conf.ImageMagick.Online, ad.ActionDispatcher())
+		_ = indexer.NewActionIdentifyV2(indexer.NameIdentify, conf.ImageMagick.Identify, conf.ImageMagick.Convert, conf.ImageMagick.Wsl, conf.ImageMagick.Timeout.Duration, conf.ImageMagick.Online, ad.ActionDispatcher())
 		logger.Info().Msg("indexer action identify added")
-		actions = append(actions, "identify")
+		actions = append(actions, indexer.NameIdentify)
 	}
 	if conf.Tika.Enabled {
 		if conf.Tika.AddressMeta != "" {
-			_ = indexer.NewActionTika("tika", conf.Tika.AddressMeta, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeMeta, conf.Tika.RegexpMimeMetaNot, "", conf.Tika.Online, ad.ActionDispatcher())
+			_ = indexer.NewActionTika(indexer.NameTika, conf.Tika.AddressMeta, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeMeta, conf.Tika.RegexpMimeMetaNot, "", conf.Tika.Online, ad.ActionDispatcher())
 			logger.Info().Msg("indexer action tika added")
-			actions = append(actions, "tika")
+			actions = append(actions, indexer.NameTika)
 		}
 
 		if conf.Tika.AddressFulltext != "" {
-			_ = indexer.NewActionTika("fulltext", conf.Tika.AddressFulltext, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, ad.ActionDispatcher())
+			_ = indexer.NewActionTika(indexer.NameFullText, conf.Tika.AddressFulltext, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, ad.ActionDispatcher())
 			logger.Info().Msg("indexer action fulltext added")
-			actions = append(actions, "tika")
+			actions = append(actions, indexer.NameFullText)
 		}
 	}
 
 	if conf.Checksum.Enabled {
-		indexer.NewActionChecksum("checksum", conf.Checksum.Digest, ad.ActionDispatcher())
-		actions = append(actions, "checksum")
+		indexer.NewActionChecksum(indexer.NameChecksum, conf.Checksum.Digest, ad.ActionDispatcher())
+		actions = append(actions, indexer.NameChecksum)
 	}
 
 	if conf.Clamav.Enabled {
-		indexer.NewActionClamAV(conf.Clamav.ClamScan, conf.Clamav.Wsl, conf.Clamav.Timeout.Duration, ad.ActionDispatcher())
-		actions = append(actions, "clamav")
+		indexer.NewActionClamAV(indexer.NameClamav, conf.Clamav.ClamScan, conf.Clamav.Wsl, conf.Clamav.Timeout.Duration, ad.ActionDispatcher())
+		actions = append(actions, indexer.NameClamav)
 	}
 
 	if conf.NSRL.Enabled {
@@ -144,8 +144,8 @@ func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Index
 			}
 			closerList.AddCloser(nsrldb)
 			logger.Info().Msgf("NSRL-Table: %v keys", keyCount)
-			indexer.NewActionNSRL("nsrl", nsrldb, ad.ActionDispatcher(), logger)
-			actions = append(actions, "nsrl")
+			indexer.NewActionNSRL(indexer.NameNSRL, nsrldb, ad.ActionDispatcher(), logger)
+			actions = append(actions, indexer.NameNSRL)
 		}
 	}
 

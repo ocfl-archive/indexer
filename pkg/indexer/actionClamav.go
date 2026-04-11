@@ -20,9 +20,9 @@ import (
 	"emperror.dev/errors"
 )
 
-func NewActionClamAV(clamav string, wsl bool, timeout time.Duration, ad *ActionDispatcher) Action {
+func NewActionClamAV(name string, clamav string, wsl bool, timeout time.Duration, ad *ActionDispatcher) Action {
 	var caps = ACTFILEFULL
-	ac := &ActionClamAV{name: "clamav", clamav: clamav, wsl: wsl, timeout: timeout, caps: caps}
+	ac := &ActionClamAV{name: name, clamav: clamav, wsl: wsl, timeout: timeout, caps: caps}
 	ad.RegisterAction(ac)
 	return ac
 }

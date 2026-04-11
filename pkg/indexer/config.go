@@ -31,6 +31,8 @@ const (
 	NameIdentify  = "identify"
 	NameFullText  = "fulltext"
 	NameJSON      = "json"
+	NameClamav    = "clamav"
+	NameNSRL      = "nsrl"
 )
 
 type duration struct {

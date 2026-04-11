@@ -32,6 +32,7 @@ import (
 	"github.com/je4/utils/v2/pkg/stashconfig"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
+	"github.com/rs/zerolog"
 )
 
 type Config struct {
@@ -40,6 +41,9 @@ type Config struct {
 }
 
 func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
+	if logger == nil {
+		logger = new(zerolog.New(zerolog.NewConsoleWriter()))
+	}
 	if conf.Siegfried.SignatureFile == "" {
 		current, err := user.Current()
 		if err != nil {

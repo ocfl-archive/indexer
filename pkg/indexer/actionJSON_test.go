@@ -92,6 +92,20 @@ func TestActionJSON_Stream(t *testing.T) {
 			wantErr:     true,
 			errContains: "error extracting JSON fields",
 		},
+		{
+			name:       "valid csl case insensitive",
+			json:       `{"ID": "123", "TYPE": "article"}`,
+			wantMime:   "application/vnd.citationstyles.style+json",
+			wantPronom: "fmt/csl",
+			wantErr:    false,
+		},
+		{
+			name:       "complex nested case insensitive",
+			json:       `{"MetaData": {"iD": "meta-1"}, "DATA": {"ITEMS": [1,2,3]}, "Version": "1.0"}`,
+			wantMime:   "application/x-complex-json",
+			wantPronom: "fmt/complex",
+			wantErr:    false,
+		},
 	}
 
 	for _, tt := range tests {

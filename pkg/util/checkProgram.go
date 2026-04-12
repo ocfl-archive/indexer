@@ -14,6 +14,7 @@ const CheckProgramMagickIdentify = "magickidentify"
 const CheckProgramFFProbe = "ffprobe"
 const CheckProgramFFMpeg = "ffmpeg"
 const CheckProgramTika = "tika"
+const CheckProgramGhostscript = "ghostscript"
 
 type checkProgramStruct struct {
 	Name   []string
@@ -39,7 +40,7 @@ func doCheck(prg string, params []string, resultRegex *regexp.Regexp) (string, b
 	return "", false
 }
 
-func checkProgram(command, guess string) (string, bool) {
+func CheckProgram(command, guess string) (string, bool) {
 	pw, ok := checkProgramList[command]
 	if !ok {
 		return "", false

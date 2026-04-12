@@ -58,7 +58,7 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
 		}
 	}
 	if conf.FFMPEG.Enabled {
-		if ffprobepath, ok := checkProgram(CheckProgramFFProbe, conf.FFMPEG.FFProbe); ok {
+		if ffprobepath, ok := CheckProgram(CheckProgramFFProbe, conf.FFMPEG.FFProbe); ok {
 			conf.FFMPEG.FFProbe = ffprobepath
 		} else {
 			conf.FFMPEG.Enabled = false
@@ -68,12 +68,12 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
 		}
 	}
 	if conf.ImageMagick.Enabled {
-		if convertpath, ok := checkProgram(CheckProgramMagickConvert, conf.ImageMagick.Convert); ok {
+		if convertpath, ok := CheckProgram(CheckProgramMagickConvert, conf.ImageMagick.Convert); ok {
 			conf.ImageMagick.Convert = convertpath
 		} else {
 			conf.ImageMagick.Enabled = false
 		}
-		if identifypath, ok := checkProgram(CheckProgramMagickIdentify, conf.ImageMagick.Identify); ok {
+		if identifypath, ok := CheckProgram(CheckProgramMagickIdentify, conf.ImageMagick.Identify); ok {
 			conf.ImageMagick.Identify = identifypath
 		} else {
 			conf.ImageMagick.Enabled = false

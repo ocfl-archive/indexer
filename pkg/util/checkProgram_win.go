@@ -7,6 +7,11 @@ import (
 )
 
 var checkProgramList = map[string]checkProgramStruct{
+	CheckProgramGhostscript: {
+		Name:   []string{"gswin64c.exe", "gswin32c.exe"},
+		Param:  []string{"-v"},
+		Result: regexp.MustCompile(`^GPL Ghostscript`),
+	},
 	CheckProgramMagickConvert: {
 		Name:   []string{"magick.exe convert", "convert.exe"},
 		Param:  []string{"-version"},

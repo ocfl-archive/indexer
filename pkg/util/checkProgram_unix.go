@@ -7,6 +7,11 @@ import (
 )
 
 var checkProgramList = map[string]checkProgramStruct{
+	CheckProgramGhostscript: {
+		Name:   []string{"gs"},
+		Param:  []string{"-v"},
+		Result: regexp.MustCompile(`^GPL Ghostscript`),
+	},
 	CheckProgramMagickConvert: {
 		Name:   []string{"magick convert", "convert"},
 		Param:  []string{"-version"},

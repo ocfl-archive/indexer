@@ -38,7 +38,8 @@ func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Index
 	var relevance = map[int]indexer.MimeWeightString{}
 
 	if conf.Optimize {
-		if err := OptimizeConfig(conf, logger); err != nil {
+		_, err := OptimizeConfig(conf, logger)
+		if err != nil {
 			return nil, nil, nil, errors.Wrap(err, "optimize config")
 		}
 	}

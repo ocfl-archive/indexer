@@ -29,6 +29,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/BurntSushi/toml"
+	"github.com/je4/utils/v2/pkg/config"
 	"github.com/je4/utils/v2/pkg/stashconfig"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
@@ -40,14 +41,15 @@ type Config struct {
 	Log     stashconfig.Config `toml:"log"`
 }
 
-func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
+func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (config.MiniConfig, error) {
+	miniConfig := config.MiniConfig{}
 	if logger == nil {
 		logger = new(zerolog.New(zerolog.NewConsoleWriter()))
 	}
 	if conf.Siegfried.SignatureFile == "" {
 		current, err := user.Current()
 		if err != nil {
-			return errors.Wrap(err, "cannot get current user")
+			return nil, errors.Wrap(err, "cannot get current user")
 		}
 		fp := filepath.Join(current.HomeDir, "siegfried", "default.sig")
 		fi, err := os.Stat(fp)
@@ -56,6 +58,7 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
 		} else {
 			conf.Siegfried.SignatureFile = "internal"
 		}
+		miniConfig["siegfried.signaturefile"] = conf.Siegfried.SignatureFile
 	}
 	if conf.FFMPEG.Enabled {
 		if ffprobepath, ok := CheckProgram(CheckProgramFFProbe, conf.FFMPEG.FFProbe); ok {
@@ -66,6 +69,8 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
 		if conf.FFMPEG.Enabled == false {
 			logger.Info().Msg("FFMPEG disabled")
 		}
+		miniConfig["ffmpeg.enabled"] = conf.FFMPEG.Enabled
+		miniConfig["ffmpeg.ffprobe"] = conf.FFMPEG.FFProbe
 	}
 	if conf.ImageMagick.Enabled {
 		if convertpath, ok := CheckProgram(CheckProgramMagickConvert, conf.ImageMagick.Convert); ok {
@@ -81,6 +86,9 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
 		if conf.ImageMagick.Enabled == false {
 			logger.Info().Msg("ImageMagick disabled")
 		}
+		miniConfig["imagemagick.enabled"] = conf.ImageMagick.Enabled
+		miniConfig["imagemagick.identify"] = conf.ImageMagick.Identify
+		miniConfig["imagemagick.convert"] = conf.ImageMagick.Convert
 	}
 	if conf.Tika.Enabled {
 		tikaoptimize := func() error {
@@ -131,13 +139,15 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) error {
 			return nil
 		}
 		if err := tikaoptimize(); err != nil {
-			return errors.Wrap(err, "tikaoptimize")
+			return nil, errors.Wrap(err, "tikaoptimize")
 		}
 		if conf.Tika.Enabled == false {
 			logger.Info().Msg("Tika disabled")
 		}
+		miniConfig["tika.enabled"] = conf.Tika.Enabled
+		miniConfig["tika.addressmeta"] = conf.Tika.AddressMeta
 	}
-	return nil
+	return miniConfig, nil
 }
 
 func LoadConfig(tomlBytes []byte) (*Config, error) {

@@ -12,7 +12,7 @@ require (
 	github.com/hooklift/iso9660 v1.0.0
 	github.com/je4/filesystem/v3 v3.0.46
 	github.com/je4/goffmpeg v0.0.0-20220114092308-33ab9986404d
-	github.com/je4/utils/v2 v2.0.64
+	github.com/je4/utils/v2 v2.0.65
 	github.com/ocfl-archive/error v1.0.5
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/sftp v1.13.10

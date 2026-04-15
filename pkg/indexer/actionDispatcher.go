@@ -33,6 +33,21 @@ func NewActionDispatcher(mimeRelevance map[int]MimeWeightString) *ActionDispatch
 			regexp: regexp.MustCompile(mime.Regexp),
 		})
 	}
+	slices.SortFunc(ad.mimeRelevance, func(i, j MimeWeight) int {
+		if i.weight == j.weight {
+			if len(i.regexp.String()) < len(j.regexp.String()) {
+				return 1
+			} else if len(i.regexp.String()) > len(j.regexp.String()) {
+				return -1
+			}
+			return 0
+
+		}
+		if i.weight < j.weight {
+			return 1
+		}
+		return -1
+	})
 	return ad
 }
 
@@ -168,12 +183,13 @@ func (ad *ActionDispatcher) Stream(sourceReader io.Reader, stateFiles []string, 
 		for _, mr := range ad.mimeRelevance {
 			if mr.regexp.MatchString(mimetype) {
 				mimeMap[mimetype] = mr.weight
+				break
 			}
 		}
 	}
 	slices.SortFunc(result.Mimetypes, func(a, b string) int {
 		// higher weight means less in sorting
-		return cmp.Compare(mimeMap[a], mimeMap[b])
+		return -cmp.Compare(mimeMap[a], mimeMap[b])
 	})
 	if len(result.Mimetypes) > 0 {
 		result.Mimetype = result.Mimetypes[0]
@@ -262,6 +278,7 @@ func (ad *ActionDispatcher) DoV2(filename string, stateFiles []string, actions [
 		for _, mr := range ad.mimeRelevance {
 			if mr.regexp.MatchString(mimetype) {
 				mimeMap[mimetype] = mr.weight
+				break
 			}
 		}
 	}

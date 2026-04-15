@@ -15,10 +15,10 @@ package indexer
 
 import (
 	"log"
-	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/je4/utils/v2/pkg/checksum"
+	"github.com/je4/utils/v2/pkg/config"
 	"github.com/ocfl-archive/indexer/v3/data"
 )
 
@@ -35,22 +35,12 @@ const (
 	NameNSRL      = "nsrl"
 )
 
-type duration struct {
-	Duration time.Duration
-}
-
-func (d *duration) UnmarshalText(text []byte) error {
-	var err error
-	d.Duration, err = time.ParseDuration(string(text))
-	return err
-}
-
 // ConfigClamAV represents the configuration for ClamAV antivirus scanning.
 type ConfigClamAV struct {
 	// Enabled indicates whether ClamAV scanning is active.
 	Enabled bool `toml:"enabled"`
 	// Timeout specifies the maximum duration for a scan.
-	Timeout duration `toml:"timeout"`
+	Timeout config.Duration `toml:"timeout"`
 	// ClamScan is the path to the clamscan executable.
 	ClamScan string `toml:"clamscan"`
 	// Wsl indicates whether to run clamscan via Windows Subsystem for Linux.
@@ -88,7 +78,7 @@ type ConfigTika struct {
 	// AddressFulltext is the URL of the Tika server for fulltext extraction.
 	AddressFulltext string `toml:"addressfulltext"`
 	// Timeout specifies the maximum duration for a Tika request.
-	Timeout duration `toml:"timeout"`
+	Timeout config.Duration `toml:"timeout"`
 	// RegexpMimeFulltext is a regular expression to include MIME types for fulltext extraction.
 	RegexpMimeFulltext string `toml:"regexpmimefulltext"`
 	// RegexpMimeFulltextNot is a regular expression to exclude MIME types from fulltext extraction.
@@ -122,7 +112,7 @@ type ConfigFFMPEG struct {
 	// Wsl indicates whether to run ffprobe via Windows Subsystem for Linux.
 	Wsl bool `toml:"wsl"`
 	// Timeout specifies the maximum duration for an analysis.
-	Timeout duration `toml:"timeout"`
+	Timeout config.Duration `toml:"timeout"`
 	// Online indicates whether FFmpeg should be used for online resources.
 	Online bool `toml:"online"`
 	// Enabled indicates whether FFmpeg analysis is active.
@@ -150,7 +140,7 @@ type ConfigImageMagick struct {
 	// Wsl indicates whether to run ImageMagick via Windows Subsystem for Linux.
 	Wsl bool `toml:"wsl"`
 	// Timeout specifies the maximum duration for an image analysis.
-	Timeout duration `toml:"timeout"`
+	Timeout config.Duration `toml:"timeout"`
 	// Online indicates whether ImageMagick should be used for online resources.
 	Online bool `toml:"online"`
 	// Enabled indicates whether ImageMagick analysis is active.
@@ -268,7 +258,7 @@ type IndexerConfig struct {
 	// Optimize indicates whether to optimize identification processes.
 	Optimize bool `toml:"optimize"`
 	// HeaderTimeout specifies the timeout for reading file headers.
-	HeaderTimeout duration `toml:"headertimeout"`
+	HeaderTimeout config.Duration `toml:"headertimeout"`
 	// HeaderSize is the number of bytes to read from the beginning of a file for identification.
 	HeaderSize int64 `toml:"headersize"`
 	// DownloadMime is a MIME type that forces a download for analysis.

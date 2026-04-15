@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/je4/utils/v2/pkg/zLogger"
@@ -82,17 +83,17 @@ func InitActionDispatcher(fss map[string]fs.FS, conf IndexerConfig, logger zLogg
 		logStartup(logger, NameChecksum)
 	}
 	if conf.FFMPEG.Enabled {
-		_ = NewActionFFProbe(NameFFProbe, conf.FFMPEG.FFProbe, conf.FFMPEG.Wsl, conf.FFMPEG.Timeout.Duration, conf.FFMPEG.Online, conf.FFMPEG.Mime, actionDispatcher)
+		_ = NewActionFFProbe(NameFFProbe, conf.FFMPEG.FFProbe, conf.FFMPEG.Wsl, time.Duration(conf.FFMPEG.Timeout), conf.FFMPEG.Online, conf.FFMPEG.Mime, actionDispatcher)
 		logStartup(logger, NameFFProbe)
 	}
 	if conf.ImageMagick.Enabled {
-		_ = NewActionIdentifyV2(NameIdentify, conf.ImageMagick.Identify, conf.ImageMagick.Convert, conf.ImageMagick.Wsl, conf.ImageMagick.Timeout.Duration, conf.ImageMagick.Online, actionDispatcher)
+		_ = NewActionIdentifyV2(NameIdentify, conf.ImageMagick.Identify, conf.ImageMagick.Convert, conf.ImageMagick.Wsl, time.Duration(conf.ImageMagick.Timeout), conf.ImageMagick.Online, actionDispatcher)
 		logStartup(logger, NameIdentify)
 	}
 	if conf.Tika.Enabled {
-		_ = NewActionTika(NameTika, conf.Tika.AddressMeta, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeMeta, conf.Tika.RegexpMimeMetaNot, "", conf.Tika.Online, actionDispatcher)
+		_ = NewActionTika(NameTika, conf.Tika.AddressMeta, time.Duration(conf.Tika.Timeout), conf.Tika.RegexpMimeMeta, conf.Tika.RegexpMimeMetaNot, "", conf.Tika.Online, actionDispatcher)
 		logStartup(logger, NameTika)
-		_ = NewActionTika(NameFullText, conf.Tika.AddressFulltext, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, actionDispatcher)
+		_ = NewActionTika(NameFullText, conf.Tika.AddressFulltext, time.Duration(conf.Tika.Timeout), conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, actionDispatcher)
 		logStartup(logger, NameFullText)
 	}
 

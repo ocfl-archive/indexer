@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"emperror.dev/errors"
 	"github.com/dgraph-io/badger/v4"
@@ -84,24 +85,24 @@ func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Index
 	}
 
 	if conf.FFMPEG.Enabled {
-		_ = indexer.NewActionFFProbe(indexer.NameFFProbe, conf.FFMPEG.FFProbe, conf.FFMPEG.Wsl, conf.FFMPEG.Timeout.Duration, conf.FFMPEG.Online, conf.FFMPEG.Mime, ad.ActionDispatcher())
+		_ = indexer.NewActionFFProbe(indexer.NameFFProbe, conf.FFMPEG.FFProbe, conf.FFMPEG.Wsl, time.Duration(conf.FFMPEG.Timeout), conf.FFMPEG.Online, conf.FFMPEG.Mime, ad.ActionDispatcher())
 		logger.Info().Msg("indexer action ffprobe added")
 		actions = append(actions, indexer.NameFFProbe)
 	}
 	if conf.ImageMagick.Enabled {
-		_ = indexer.NewActionIdentifyV2(indexer.NameIdentify, conf.ImageMagick.Identify, conf.ImageMagick.Convert, conf.ImageMagick.Wsl, conf.ImageMagick.Timeout.Duration, conf.ImageMagick.Online, ad.ActionDispatcher())
+		_ = indexer.NewActionIdentifyV2(indexer.NameIdentify, conf.ImageMagick.Identify, conf.ImageMagick.Convert, conf.ImageMagick.Wsl, time.Duration(conf.ImageMagick.Timeout), conf.ImageMagick.Online, ad.ActionDispatcher())
 		logger.Info().Msg("indexer action identify added")
 		actions = append(actions, indexer.NameIdentify)
 	}
 	if conf.Tika.Enabled {
 		if conf.Tika.AddressMeta != "" {
-			_ = indexer.NewActionTika(indexer.NameTika, conf.Tika.AddressMeta, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeMeta, conf.Tika.RegexpMimeMetaNot, "", conf.Tika.Online, ad.ActionDispatcher())
+			_ = indexer.NewActionTika(indexer.NameTika, conf.Tika.AddressMeta, time.Duration(conf.Tika.Timeout), conf.Tika.RegexpMimeMeta, conf.Tika.RegexpMimeMetaNot, "", conf.Tika.Online, ad.ActionDispatcher())
 			logger.Info().Msg("indexer action tika added")
 			actions = append(actions, indexer.NameTika)
 		}
 
 		if conf.Tika.AddressFulltext != "" {
-			_ = indexer.NewActionTika(indexer.NameFullText, conf.Tika.AddressFulltext, conf.Tika.Timeout.Duration, conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, ad.ActionDispatcher())
+			_ = indexer.NewActionTika(indexer.NameFullText, conf.Tika.AddressFulltext, time.Duration(conf.Tika.Timeout), conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, ad.ActionDispatcher())
 			logger.Info().Msg("indexer action fulltext added")
 			actions = append(actions, indexer.NameFullText)
 		}
@@ -113,7 +114,7 @@ func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Index
 	}
 
 	if conf.Clamav.Enabled {
-		indexer.NewActionClamAV(indexer.NameClamav, conf.Clamav.ClamScan, conf.Clamav.Wsl, conf.Clamav.Timeout.Duration, ad.ActionDispatcher())
+		indexer.NewActionClamAV(indexer.NameClamav, conf.Clamav.ClamScan, conf.Clamav.Wsl, time.Duration(conf.Clamav.Timeout), ad.ActionDispatcher())
 		actions = append(actions, indexer.NameClamav)
 	}
 

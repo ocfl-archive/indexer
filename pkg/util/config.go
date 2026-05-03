@@ -60,6 +60,7 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (config
 		}
 		miniConfig["siegfried.signaturefile"] = conf.Siegfried.SignatureFile
 	}
+	miniConfig["siegfried.enabled"] = conf.Siegfried.Enabled
 	if conf.FFMPEG.Enabled {
 		if ffprobepath, ok := CheckProgram(CheckProgramFFProbe, conf.FFMPEG.FFProbe); ok {
 			conf.FFMPEG.FFProbe = ffprobepath
@@ -71,6 +72,7 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (config
 		}
 		miniConfig["ffmpeg.enabled"] = conf.FFMPEG.Enabled
 		miniConfig["ffmpeg.ffprobe"] = conf.FFMPEG.FFProbe
+		miniConfig["ffmpeg.enabled"] = conf.FFMPEG.Enabled
 	}
 	if conf.ImageMagick.Enabled {
 		if convertpath, ok := CheckProgram(CheckProgramMagickConvert, conf.ImageMagick.Convert); ok {
@@ -89,6 +91,7 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (config
 		miniConfig["imagemagick.enabled"] = conf.ImageMagick.Enabled
 		miniConfig["imagemagick.identify"] = conf.ImageMagick.Identify
 		miniConfig["imagemagick.convert"] = conf.ImageMagick.Convert
+		miniConfig["imagemagick.enabled"] = conf.ImageMagick.Enabled
 	}
 	if conf.Tika.Enabled {
 		tikaoptimize := func() error {
@@ -146,7 +149,10 @@ func OptimizeConfig(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (config
 		}
 		miniConfig["tika.enabled"] = conf.Tika.Enabled
 		miniConfig["tika.addressmeta"] = conf.Tika.AddressMeta
+		miniConfig["tika.enabled"] = conf.Tika.Enabled
 	}
+	miniConfig["enabled"] = conf.Enabled
+	miniConfig["optimize"] = false
 	return miniConfig, nil
 }
 

@@ -8,9 +8,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/je4/filesystem/v3/pkg/vfsrw"
-	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/zLogger"
+	"github.com/ocfl-archive/filesystem/pkg/vfsrw"
+	"github.com/ocfl-archive/filesystem/pkg/writefs"
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 	"github.com/ocfl-archive/indexer/v3/pkg/util"
 	ublogger "gitlab.switch.ch/ub-unibas/go-ublogger/v2"

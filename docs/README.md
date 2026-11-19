@@ -17,6 +17,7 @@ graph TD
     Gen --> API["Go API & Library Guide (api.md)"]
 
     Actions --> SF["Siegfried (actions/siegfried.md)"]
+    Actions --> YARAX["YARA-X (actions/yarax.md)"]
     Actions --> XML["XML Format (actions/xml.md)"]
     Actions --> JSON["JSON Schemas (actions/json.md)"]
     Actions --> CS["Checksum (actions/checksum.md)"]
@@ -44,6 +45,7 @@ graph TD
 | Action | Documentation | Key Functionality | Capabilities |
 |---|---|---|---|
 | `siegfried` | [Siegfried Action](actions/siegfried.md) | PRONOM PUID & signature-based format identification | `ACTFILEHEAD`, `ACTSTREAM` |
+| `yarax` | [YARA-X Action](actions/yarax.md) | Rule-based pattern matching and format identification | `ACTFILEHEAD`, `ACTSTREAM` |
 | `xml` | [XML Action](actions/xml.md) | Streaming XML root & namespace matching (METS, MEI, FineReader) | `ACTFILEHEAD`, `ACTSTREAM` |
 | `json` | [JSON Action](actions/json.md) | Streaming JSON fieldset matching (GeoJSON, npm, etc.) | `ACTFILEHEAD`, `ACTSTREAM` |
 | `checksum` | [Checksum Action](actions/checksum.md) | Single-pass multi-algorithm hashing (SHA512, SHA256, MD5) | `ACTSTREAM` |

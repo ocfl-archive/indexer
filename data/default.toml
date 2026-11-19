@@ -7,6 +7,14 @@ Optimize=true
 Enabled=false
 Digest=["sha512"]
 
+[YaraX]
+Enabled = false
+RulesFiles = []
+FastScan = false
+Timeout = "0s"
+MaxMatchesPerPattern = 0
+StreamSize = 67108864
+
 [JSON]
 Enabled=true
 [JSON.Format.CSL]

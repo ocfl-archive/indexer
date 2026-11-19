@@ -7,6 +7,14 @@ LocalCache=false
 Enabled=true
 Digest=["sha512"]
 
+[Indexer.YaraX]
+Enabled=false
+RulesFiles=[]
+FastScan=false
+Timeout="0s"
+MaxMatchesPerPattern=0
+StreamSize=67108864
+
 [Indexer.JSON]
 Enabled=true
 [Indexer.JSON.Format.CSL]

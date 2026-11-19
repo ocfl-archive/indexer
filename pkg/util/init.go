@@ -30,7 +30,7 @@ func (c _closer) Close() error {
 }
 
 // InitIndexer initializes an Indexer (ActionDispatcher wrapper) and registers all enabled actions
-// from the provided configuration (Siegfried, XML, JSON, Checksum, FFmpeg/FFProbe, ImageMagick,
+// from the provided configuration (Siegfried, YARA-X, XML, JSON, Checksum, FFmpeg/FFProbe, ImageMagick,
 // Apache Tika, ClamAV, NSRL, and External microservices).
 // It returns the initialized Indexer, list of active action names, an io.Closer to release resources,
 // and any initialization error.

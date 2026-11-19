@@ -14,6 +14,7 @@ graph LR
     Config --> Indexer["[Indexer] Action Config"]
     Indexer --> MR["[Indexer.MimeRelevance]"]
     Indexer --> SF["[Indexer.Siegfried]"]
+    Indexer --> YARAX["[Indexer.YaraX]"]
     Indexer --> XML["[Indexer.XML]"]
     Indexer --> JSON["[Indexer.JSON]"]
     Indexer --> CS["[Indexer.Checksum]"]
@@ -86,7 +87,25 @@ Subtype = "epub"
 
 ---
 
-### 3. `[Indexer.XML]`
+### 3. `[Indexer.YaraX]`
+Configures in-process YARA-X rule matching and pattern-based format identification.
+
+```toml
+[Indexer.YaraX]
+enabled = true
+rulesfiles = [
+    "/etc/indexer/rules/*.yar",
+    "/etc/indexer/rules/compiled.yrc"
+]
+fastscan = false
+timeout = "10s"
+maxmatchesperpattern = 1000
+streamsize = 67108864 # 64MB buffer
+```
+
+---
+
+### 4. `[Indexer.XML]`
 Configures streaming XML root/namespace matching.
 
 ```toml
@@ -105,7 +124,7 @@ Pronom = "fmt/917"
 
 ---
 
-### 4. `[Indexer.JSON]`
+### 5. `[Indexer.JSON]`
 Configures JSON schema identification based on required and candidate fields.
 
 ```toml
@@ -124,7 +143,7 @@ subtype = "geojson"
 
 ---
 
-### 5. `[Indexer.Checksum]`
+### 6. `[Indexer.Checksum]`
 Configures multi-algorithm checksum calculations.
 
 ```toml
@@ -135,7 +154,7 @@ digest = ["sha512", "sha256", "md5"]
 
 ---
 
-### 6. `[Indexer.FFMPEG]`
+### 7. `[Indexer.FFMPEG]`
 Configures audio/video metadata extraction with `ffprobe`.
 
 ```toml
@@ -155,7 +174,7 @@ mime = "video/mp4"
 
 ---
 
-### 7. `[Indexer.ImageMagick]`
+### 8. `[Indexer.ImageMagick]`
 Configures image metadata, frame inspection, and geometry extraction.
 
 ```toml
@@ -170,7 +189,7 @@ online = true
 
 ---
 
-### 8. `[Indexer.Tika]`
+### 9. `[Indexer.Tika]`
 Configures Apache Tika metadata and full-text extraction endpoints.
 
 ```toml
@@ -188,7 +207,7 @@ regexpmimefulltextnot = "^(audio|video|image)/"
 
 ---
 
-### 9. `[Indexer.clamav]`
+### 10. `[Indexer.clamav]`
 Configures ClamAV antivirus scanning.
 
 ```toml
@@ -201,7 +220,7 @@ timeout = "15s"
 
 ---
 
-### 10. `[Indexer.nsrl]`
+### 11. `[Indexer.nsrl]`
 Configures NIST NSRL hash lookup using BadgerDB.
 
 ```toml
@@ -212,7 +231,7 @@ badger = "/var/data/indexer/nsrl_badger"
 
 ---
 
-### 11. `[[Indexer.External]]`
+### 12. `[[Indexer.External]]`
 Registers external microservices or webhooks.
 
 ```toml

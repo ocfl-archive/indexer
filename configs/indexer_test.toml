@@ -19,6 +19,14 @@ LocalCache=false
 Enabled=true
 Digest=["sha512", "blake2b-384"]
 
+[Indexer.YaraX]
+Enabled=false
+RulesFiles=[]
+FastScan=false
+Timeout="10s"
+MaxMatchesPerPattern=0
+StreamSize=67108864
+
 [Indexer.Siegfried]
 Enabled=true
 #Signature = "/usr/share/siegfried/default.sig"

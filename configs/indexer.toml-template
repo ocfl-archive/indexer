@@ -63,6 +63,14 @@ enabled = true
 [Siegfried.MimeMap]
 "fmt/134" = "audio/mp3"
 
+[YaraX]
+enabled = false
+rulesfiles = []
+fastscan = false
+timeout = "10s"
+maxmatchesperpattern = 0
+streamsize = 67108864
+
 [clamav]
     enabled = true
     clamscan = "/usr/bin/clamdscan"

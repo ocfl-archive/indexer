@@ -41,6 +41,10 @@ func main() {
 		Siegfried: indexer.ConfigSiegfried{
 			Enabled: true,
 		},
+		YaraX: indexer.ConfigYaraX{
+			Enabled:    true,
+			RulesFiles: []string{"rules/*.yar"},
+		},
 		Checksum: indexer.ConfigChecksum{
 			Enabled: true,
 			Digest:  []string{"sha256", "md5"},

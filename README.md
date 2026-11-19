@@ -13,6 +13,7 @@ Originally based on the concept of [dla-marbach/indexer](https://github.com/dla-
 
 - **Concurrent Streaming Pipeline**: Evaluates multiple identification actions simultaneously over an `io.Reader` using stream fan-out (`io.MultiWriter`), avoiding disk I/O bottlenecks.
 - **PRONOM Identification**: Embedded and external [Siegfried](https://www.itforarchivists.com/siegfried) signature analysis for PRONOM PUIDs and standardized MIME types.
+- **Rule-Based Classification & Pattern Matching**: Native in-process [YARA-X](https://virustotal.github.io/yara-x/) engine for complex signature detection, metadata extraction, and security heuristics.
 - **Deep Schema Matching**: Streaming XML (METS, MEI, ALTO, ABBYY) and JSON (GeoJSON, npm package, JSON-LD) schema identification.
 - **Multi-Digest Hashing**: Single-pass computation of SHA-512, SHA-256, MD5, SHA-3, and BLAKE2b checksums.
 - **Multimedia & Graphic Inspection**: Integrates FFmpeg (`ffprobe`) for audio/video duration/codecs/dimensions and ImageMagick (`identify`) for image geometry, frames, and color profiles.
@@ -41,6 +42,7 @@ graph TB
 
     subgraph Actions ["Parallel Format Actions"]
         SF["Siegfried (PRONOM)"]
+        YARAX["YARA-X Rule Matcher"]
         XML["XML Schema Parser"]
         JSON["JSON Fieldset Parser"]
         CS["Checksum Calculator"]
@@ -60,6 +62,7 @@ graph TB
     Disk --> MimeDetect
     MimeDetect --> FanOut
     FanOut --> SF
+    FanOut --> YARAX
     FanOut --> XML
     FanOut --> JSON
     FanOut --> CS
@@ -70,6 +73,7 @@ graph TB
     Disk --> NSRL
     Disk --> EXT
     SF --> Merger
+    YARAX --> Merger
     XML --> Merger
     JSON --> Merger
     CS --> Merger
@@ -90,6 +94,7 @@ graph TB
 | Action | Capability | Description | Documentation |
 |---|---|---|---|
 | `siegfried` | `ACTFILEHEAD`, `ACTSTREAM` | Signature-based PRONOM identification | [Siegfried Action](docs/actions/siegfried.md) |
+| `yarax` | `ACTFILEHEAD`, `ACTSTREAM` | Rule-based pattern matching and format identification | [YARA-X Action](docs/actions/yarax.md) |
 | `xml` | `ACTFILEHEAD`, `ACTSTREAM` | Fast streaming XML root tag & namespace matching | [XML Action](docs/actions/xml.md) |
 | `json` | `ACTFILEHEAD`, `ACTSTREAM` | Streaming JSON fieldset & schema detection | [JSON Action](docs/actions/json.md) |
 | `checksum` | `ACTSTREAM` | Concurrent multi-algorithm hash generation | [Checksum Action](docs/actions/checksum.md) |

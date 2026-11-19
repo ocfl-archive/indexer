@@ -24,6 +24,7 @@ graph TB
 
     subgraph Actions ["Parallel & Specialized Actions"]
         SF["Siegfried (PRONOM)"]
+        YARAX["YARA-X Rule Matcher"]
         XML["XML Schema Parser"]
         JSON["JSON Fieldset Parser"]
         CS["Checksum Calculator"]
@@ -43,6 +44,7 @@ graph TB
     FileIn --> MimeDetector
     MimeDetector --> FanOut
     FanOut --> SF
+    FanOut --> YARAX
     FanOut --> XML
     FanOut --> JSON
     FanOut --> CS
@@ -53,6 +55,7 @@ graph TB
     FileIn --> NSRL
     FileIn --> EXT
     SF --> Aggregator
+    YARAX --> Aggregator
     XML --> Aggregator
     JSON --> Aggregator
     CS --> Aggregator

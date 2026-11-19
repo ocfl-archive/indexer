@@ -30,6 +30,7 @@ import (
 
 var regexIdentifyMime = regexp.MustCompile("^image/")
 
+// ActionIdentifyV2 extracts image geometry, color depth, format profiles, and frame details using ImageMagick.
 type ActionIdentifyV2 struct {
 	name         string
 	identify     string
@@ -41,6 +42,7 @@ type ActionIdentifyV2 struct {
 	extensionMap map[*regexp.Regexp]string
 }
 
+// CanHandle determines whether ImageMagick can process the given MIME type or file extension.
 func (ai *ActionIdentifyV2) CanHandle(contentType string, filename string) bool {
 	if regexIdentifyMime.MatchString(contentType) {
 		return true
@@ -53,6 +55,7 @@ func (ai *ActionIdentifyV2) CanHandle(contentType string, filename string) bool 
 	return false
 }
 
+// NewActionIdentifyV2 creates and registers an ImageMagick ActionIdentifyV2 instance.
 func NewActionIdentifyV2(name, identify, convert string, wsl bool, timeout time.Duration, online bool, ad *ActionDispatcher) Action {
 	var caps ActionCapability = ACTFILEHEAD
 	if online {

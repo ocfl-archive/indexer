@@ -18,11 +18,14 @@ import (
 	"slices"
 )
 
+// ActionDispatcher coordinates registered identification and metadata extraction actions,
+// manages streaming fan-out across multiple actions, and sorts/aggregates the results.
 type ActionDispatcher struct {
 	mimeRelevance []MimeWeight
 	actions       map[string]Action
 }
 
+// NewActionDispatcher creates a new ActionDispatcher initialized with MIME relevance weighting rules.
 func NewActionDispatcher(mimeRelevance map[int]MimeWeightString) *ActionDispatcher {
 	ad := &ActionDispatcher{
 		mimeRelevance: []MimeWeight{},
@@ -52,25 +55,30 @@ func NewActionDispatcher(mimeRelevance map[int]MimeWeightString) *ActionDispatch
 	return ad
 }
 
+// GetActions returns a map of all registered actions indexed by their name.
 func (ad *ActionDispatcher) GetActions() map[string]Action {
 	return ad.actions
 }
 
+// Sort orders a slice of action names by ascending action weight.
 func (ad *ActionDispatcher) Sort(actions []string) {
 	sort.SliceStable(actions, func(i, j int) bool {
 		return ad.actions[actions[i]].GetWeight() < ad.actions[actions[j]].GetWeight()
 	})
 }
 
+// RegisterAction adds an Action instance to the dispatcher's registry.
 func (ad *ActionDispatcher) RegisterAction(action Action) {
 	ad.actions[action.GetName()] = action
 }
 
+// GetAction retrieves a registered action by name.
 func (ad *ActionDispatcher) GetAction(name string) (Action, bool) {
 	action, ok := ad.actions[name]
 	return action, ok
 }
 
+// GetActionNames returns a slice of all registered action names.
 func (ad *ActionDispatcher) GetActionNames() []string {
 	var names []string
 	for name := range ad.actions {
@@ -79,6 +87,7 @@ func (ad *ActionDispatcher) GetActionNames() []string {
 	return names
 }
 
+// GetActionNamesByCaps returns the names of all registered actions matching the specified capability mask.
 func (ad *ActionDispatcher) GetActionNamesByCaps(caps ActionCapability) []string {
 	var names []string
 	for name, action := range ad.actions {

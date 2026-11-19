@@ -23,15 +23,18 @@ import (
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// ActionChecksum computes cryptographic message digests concurrently over input streams.
 type ActionChecksum struct {
 	name    string
 	digests []checksum.DigestAlgorithm
 }
 
+// CanHandle returns true as checksum calculation applies to all file types.
 func (as *ActionChecksum) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
+// NewActionChecksum creates and registers a new ActionChecksum instance with the dispatcher.
 func NewActionChecksum(name string, digests []checksum.DigestAlgorithm, ad *ActionDispatcher) Action {
 	as := &ActionChecksum{name: name, digests: digests}
 	ad.RegisterAction(as)

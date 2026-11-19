@@ -65,6 +65,7 @@ func parseDuration(t string) (time.Duration, error) {
 		time.Duration(hundreds*10)*time.Millisecond, nil
 }
 
+// ActionFFProbe extracts technical audio/video metadata and stream geometry using ffprobe.
 type ActionFFProbe struct {
 	name    string
 	ffprobe string
@@ -74,6 +75,7 @@ type ActionFFProbe struct {
 	mime    []FFMPEGMime
 }
 
+// CanHandle checks whether ffprobe can handle the provided content type or file extension.
 func (as *ActionFFProbe) CanHandle(contentType string, filename string) bool {
 	if regexFFProbeMime.MatchString(contentType) {
 		return true
@@ -96,6 +98,7 @@ func (as *ActionFFProbe) CanHandle(contentType string, filename string) bool {
 		strings.ToLower(filepath.Ext(filename)))
 }
 
+// NewActionFFProbe creates and registers a new ActionFFProbe instance.
 func NewActionFFProbe(name string, ffprobe string, wsl bool, timeout time.Duration, online bool, mime []FFMPEGMime, ad *ActionDispatcher) Action {
 	var caps ActionCapability = ACTFILEHEAD | ACTSTREAM
 	if online {

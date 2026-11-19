@@ -1,3 +1,4 @@
+// Package util provides helper utilities, initialization routines, and indexing wrappers.
 package util
 
 import (
@@ -10,12 +11,16 @@ import (
 	"github.com/ocfl-archive/indexer/v3/pkg/indexer"
 )
 
+// Indexer is a wrapper around indexer.ActionDispatcher providing convenience indexing functions.
 type Indexer indexer.ActionDispatcher
 
+// ActionDispatcher returns the underlying *indexer.ActionDispatcher instance.
 func (idx *Indexer) ActionDispatcher() *indexer.ActionDispatcher {
 	return (*indexer.ActionDispatcher)(idx)
 }
 
+// Index reads a file from an fs.FS filesystem, calculates specified checksum digests,
+// and streams the content through configured actions simultaneously.
 func (idx *Indexer) Index(fsys fs.FS, path string, realname string, actions []string, digestAlgs []checksum.DigestAlgorithm, writer io.Writer, logger zLogger.ZLogger) (*indexer.ResultV2, map[checksum.DigestAlgorithm]string, error) {
 	if realname == "" {
 		realname = path

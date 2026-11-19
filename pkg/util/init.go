@@ -29,9 +29,11 @@ func (c _closer) Close() error {
 	return errors.Combine(errs...)
 }
 
-// InitIndexer
-// initializes an ActionDispatcher with Siegfried, ImageMagick, FFPMEG and Tika
-// the actions are named NameSiegfried, NameIdentify, NameFFProbe, NameTika and NameFullText
+// InitIndexer initializes an Indexer (ActionDispatcher wrapper) and registers all enabled actions
+// from the provided configuration (Siegfried, XML, JSON, Checksum, FFmpeg/FFProbe, ImageMagick,
+// Apache Tika, ClamAV, NSRL, and External microservices).
+// It returns the initialized Indexer, list of active action names, an io.Closer to release resources,
+// and any initialization error.
 func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Indexer, actions []string, closer io.Closer, err error) {
 	actions = []string{}
 	closerList := _closer{}

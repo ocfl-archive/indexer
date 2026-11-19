@@ -27,24 +27,29 @@ import (
 	"emperror.dev/errors"
 )
 
+// ExternalActionCalltype defines the invocation protocol for an external service action.
 type ExternalActionCalltype uint
 
 const (
-	EACTURL      ExternalActionCalltype = 1 << iota // url with placehoder for full path
-	EACTJSONPOST                                    // send json struct via post
+	// EACTURL substitutes the target path in the URL query/path template.
+	EACTURL ExternalActionCalltype = 1 << iota
+	// EACTJSONPOST posts a JSON payload containing file information to the service.
+	EACTJSONPOST
 )
 
+// EACTString maps ExternalActionCalltype values to human-readable strings.
 var EACTString map[ExternalActionCalltype]string = map[ExternalActionCalltype]string{
 	EACTURL:      "EACTURL",
 	EACTJSONPOST: "EACTJSONPOST",
 }
 
+// EACTAction maps string tokens to ExternalActionCalltype enum values.
 var EACTAction map[string]ExternalActionCalltype = map[string]ExternalActionCalltype{
 	"EACTURL":      EACTURL,
 	"EACTJSONPOST": EACTJSONPOST,
 }
 
-// for toml decoding
+// UnmarshalText deserializes a string into an ExternalActionCalltype.
 func (a *ExternalActionCalltype) UnmarshalText(text []byte) error {
 	var ok bool
 	*a, ok = EACTAction[string(text)]
@@ -54,6 +59,7 @@ func (a *ExternalActionCalltype) UnmarshalText(text []byte) error {
 	return nil
 }
 
+// NewActionExternal creates and registers a new ActionExternal instance.
 func NewActionExternal(name, address string, capability ActionCapability, callType ExternalActionCalltype, mimetype string, ad *ActionDispatcher) Action {
 	ae := &ActionExternal{
 		name:       name,
@@ -66,6 +72,7 @@ func NewActionExternal(name, address string, capability ActionCapability, callTy
 	return ae
 }
 
+// ActionExternal invokes an external HTTP microservice or webhook for format analysis.
 type ActionExternal struct {
 	name       string
 	url        string

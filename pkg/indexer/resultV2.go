@@ -2,22 +2,37 @@ package indexer
 
 import "slices"
 
+// ResultV2 represents the unified metadata and format identification output of the indexer.
 type ResultV2 struct {
-	Errors    map[string]string `json:"errors,omitempty"`
-	Mimetype  string            `json:"mimetype"`
-	Mimetypes []string          `json:"mimetypes"`
-	Pronom    string            `json:"pronom"`
-	Pronoms   []string          `json:"pronoms"`
-	Checksum  map[string]string `json:"checksum,omitempty"`
-	Width     uint              `json:"width,omitempty"`
-	Height    uint              `json:"height,omitempty"`
-	Duration  uint              `json:"duration,omitempty"`
-	Size      uint64            `json:"size"`
-	Metadata  map[string]any    `json:"metadata"`
-	Type      string            `json:"type"`
-	Subtype   string            `json:"subtype"`
+	// Errors contains error messages indexed by action name.
+	Errors map[string]string `json:"errors,omitempty"`
+	// Mimetype is the resolved primary MIME type after weight sorting.
+	Mimetype string `json:"mimetype"`
+	// Mimetypes lists all candidate MIME types detected across actions.
+	Mimetypes []string `json:"mimetypes"`
+	// Pronom is the resolved primary PRONOM PUID (e.g. "fmt/40").
+	Pronom string `json:"pronom"`
+	// Pronoms lists all detected PRONOM PUIDs.
+	Pronoms []string `json:"pronoms"`
+	// Checksum maps digest algorithm names to lowercase hex digest strings.
+	Checksum map[string]string `json:"checksum,omitempty"`
+	// Width is the image or video width in pixels.
+	Width uint `json:"width,omitempty"`
+	// Height is the image or video height in pixels.
+	Height uint `json:"height,omitempty"`
+	// Duration is the audio or video duration in seconds.
+	Duration uint `json:"duration,omitempty"`
+	// Size is the total file/stream size in bytes.
+	Size uint64 `json:"size"`
+	// Metadata holds arbitrary structured metadata contributed by actions.
+	Metadata map[string]any `json:"metadata"`
+	// Type represents the high-level category (e.g. "image", "video", "ocr").
+	Type string `json:"type"`
+	// Subtype represents the specific format name or schema subtype.
+	Subtype string `json:"subtype"`
 }
 
+// NewResultV2 instantiates a new empty ResultV2 with initialized maps and slices.
 func NewResultV2() *ResultV2 {
 	return &ResultV2{
 		Errors:    map[string]string{},

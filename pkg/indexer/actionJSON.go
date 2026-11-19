@@ -13,11 +13,13 @@ import (
 	"emperror.dev/errors"
 )
 
+// ActionJSON identifies specific JSON formats and schemas by inspecting field tokens in a stream.
 type ActionJSON struct {
 	name   string
 	format map[string]ConfigJSONFormat
 }
 
+// CanHandle determines if the action can process the file based on extension (.json) or media type.
 func (as *ActionJSON) CanHandle(contentType string, filename string) bool {
 	if strings.ToLower(filepath.Ext(filename)) == ".json" {
 		return true
@@ -33,6 +35,7 @@ func (as *ActionJSON) CanHandle(contentType string, filename string) bool {
 	return false
 }
 
+// NewActionJSON creates and registers a new ActionJSON instance.
 func NewActionJSON(name string, format map[string]ConfigJSONFormat, ad *ActionDispatcher) Action {
 	as := &ActionJSON{
 		name:   name,

@@ -17,6 +17,7 @@ import (
 	xmlparser "github.com/tamerh/xml-stream-parser"
 )
 
+// ActionXML parses XML streams to match root elements and attribute signatures against configured formats.
 type ActionXML struct {
 	//server         *Server
 	name           string
@@ -24,6 +25,7 @@ type ActionXML struct {
 	compiledRegexp map[string]map[string]*regexp.Regexp
 }
 
+// CanHandle checks whether the file can be processed as XML by extension or content type.
 func (as *ActionXML) CanHandle(contentType string, filename string) bool {
 	if strings.ToLower(filepath.Ext(filename)) == ".xml" {
 		return true
@@ -39,6 +41,7 @@ func (as *ActionXML) CanHandle(contentType string, filename string) bool {
 	return false
 }
 
+// NewActionXML creates and registers a new ActionXML instance.
 func NewActionXML(name string, format map[string]ConfigXMLFormat, ad *ActionDispatcher) Action {
 	as := &ActionXML{
 		name:   name,

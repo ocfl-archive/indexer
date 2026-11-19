@@ -27,6 +27,7 @@ import (
 	"github.com/richardlehane/siegfried/pkg/pronom"
 )
 
+// ActionSiegfried performs PRONOM file format identification using the Siegfried signature engine.
 type ActionSiegfried struct {
 	name    string
 	sf      *siegfried.Siegfried
@@ -37,10 +38,12 @@ type ActionSiegfried struct {
 	sfPool        sync.Pool
 }
 
+// CanHandle returns true as signature scanning can be attempted for all inputs.
 func (as *ActionSiegfried) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
+// NewActionSiegfried creates and registers a pooled ActionSiegfried instance.
 func NewActionSiegfried(name string, signatureData []byte, mimeMap map[string]string, typeMap map[string]TypeSubtype, ad *ActionDispatcher, streamSize int) Action {
 
 	/*

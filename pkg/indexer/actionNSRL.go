@@ -30,12 +30,14 @@ const NSRL_PROD = "ProductCode-"
 const NSRL_MFG = "MFgCode-"
 const NSRL_File = "SHA-1-"
 
+// NewActionNSRL creates and registers a new ActionNSRL instance for BadgerDB hash lookups.
 func NewActionNSRL(name string, nsrldb *badger.DB, ad *ActionDispatcher, logger zLogger.ZLogger) Action {
 	an := &ActionNSRL{name: name, nsrldb: nsrldb, caps: ACTFILE, logger: logger}
 	ad.RegisterAction(an)
 	return an
 }
 
+// ActionNSRL performs NIST NSRL RDS hash lookups against a local BadgerDB database.
 type ActionNSRL struct {
 	name   string
 	caps   ActionCapability

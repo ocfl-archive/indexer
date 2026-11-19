@@ -21,6 +21,7 @@ import (
 	"emperror.dev/errors"
 )
 
+// NewActionClamAV creates and registers a new ActionClamAV instance.
 func NewActionClamAV(name string, clamav string, wsl bool, timeout time.Duration, ad *ActionDispatcher) Action {
 	var caps = ACTFILEFULL
 	ac := &ActionClamAV{name: name, clamav: clamav, wsl: wsl, timeout: timeout, caps: caps}
@@ -28,6 +29,7 @@ func NewActionClamAV(name string, clamav string, wsl bool, timeout time.Duration
 	return ac
 }
 
+// ActionClamAV executes ClamAV antivirus scans on local files.
 type ActionClamAV struct {
 	name    string
 	clamav  string

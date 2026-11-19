@@ -30,6 +30,7 @@ import (
 
 // java -jar tika-server-1.24.jar -enableUnsecureFeatures -enableFileUrl --port=9997
 
+// ActionTika executes HTTP requests to an Apache Tika server for metadata or full-text extraction.
 type ActionTika struct {
 	name          string
 	url           string
@@ -40,6 +41,7 @@ type ActionTika struct {
 	field         string
 }
 
+// CanHandle checks if the content type matches the include/exclude regex filters.
 func (at *ActionTika) CanHandle(contentType string, filename string) bool {
 	if at.regexpMime != nil && !at.regexpMime.MatchString(contentType) {
 		return false
@@ -50,6 +52,7 @@ func (at *ActionTika) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
+// NewActionTika creates and registers a new ActionTika instance.
 func NewActionTika(name, uri string, timeout time.Duration, regexpMime, regexpMimeNot, field string, online bool, ad *ActionDispatcher) Action {
 	var caps ActionCapability = ACTFILEHEAD
 	if online {

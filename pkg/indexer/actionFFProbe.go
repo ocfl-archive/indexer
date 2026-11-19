@@ -28,7 +28,7 @@ import (
 
 	"emperror.dev/errors"
 	ffmpeg_models "github.com/je4/goffmpeg/models"
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 var regexpFFProbeDuration = regexp.MustCompile("^([0-9]+):([0-9]+):([0-9]+).([0-9]{2})$")
@@ -128,7 +128,7 @@ func (as *ActionFFProbe) GetName() string {
 	return as.name
 }
 
-func (as *ActionFFProbe) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (as *ActionFFProbe) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
 	if !as.CanHandle(contentType, filename) {
 		return nil, nil
 	}
@@ -144,10 +144,10 @@ func (as *ActionFFProbe) Stream(contentType string, reader io.Reader, filename s
 
 	var out bytes.Buffer
 	out.Grow(1024 * 1024) // 1MB size
-	ctx, cancel := context.WithTimeout(context.Background(), as.timeout)
+	cmdCtx, cancel := context.WithTimeout(ctx, as.timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, cmdfile, cmdparam...)
+	cmd := exec.CommandContext(cmdCtx, cmdfile, cmdparam...)
 	cmd.Stdin = reader
 	cmd.Stdout = &out
 
@@ -198,7 +198,7 @@ func (as *ActionFFProbe) Stream(contentType string, reader io.Reader, filename s
 	return result, nil
 }
 
-func (as *ActionFFProbe) DoV2(filename string) (*ResultV2, error) {
+func (as *ActionFFProbe) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	cmdparam := []string{"-i", filename, "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", "-show_error"}
 	cmdfile := as.ffprobe
 	if as.wsl {
@@ -208,10 +208,10 @@ func (as *ActionFFProbe) DoV2(filename string) (*ResultV2, error) {
 
 	var out bytes.Buffer
 	out.Grow(1024 * 1024) // 1MB size
-	ctx, cancel := context.WithTimeout(context.Background(), as.timeout)
+	cmdCtx, cancel := context.WithTimeout(ctx, as.timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, cmdfile, cmdparam...)
+	cmd := exec.CommandContext(cmdCtx, cmdfile, cmdparam...)
 	cmd.Stdout = &out
 
 	if err := cmd.Run(); err != nil {

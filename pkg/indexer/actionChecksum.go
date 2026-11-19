@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"context"
 	"io"
 	"os"
 
@@ -49,7 +50,10 @@ func (as *ActionChecksum) GetName() string {
 	return as.name
 }
 
-func (as *ActionChecksum) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (as *ActionChecksum) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	cw, err := checksum.NewChecksumWriter(as.digests)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create checksum writer")
@@ -70,7 +74,10 @@ func (as *ActionChecksum) Stream(contentType string, reader io.Reader, filename 
 	return result, nil
 }
 
-func (as *ActionChecksum) DoV2(filename string) (*ResultV2, error) {
+func (as *ActionChecksum) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", filename)

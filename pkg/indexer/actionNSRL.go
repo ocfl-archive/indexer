@@ -14,6 +14,7 @@
 package indexer
 
 import (
+	"context"
 	json "encoding/json/v2"
 
 	"emperror.dev/errors"
@@ -42,7 +43,7 @@ type ActionNSRL struct {
 	logger zLogger.ZLogger
 }
 
-func (aNSRL *ActionNSRL) DoV2(filename string) (*ResultV2, error) {
+func (aNSRL *ActionNSRL) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -51,7 +52,7 @@ func (aNSRL *ActionNSRL) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
-func (aNSRL *ActionNSRL) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (aNSRL *ActionNSRL) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
 	return nil, errors.New("nsrl actions does not support streaming")
 }
 

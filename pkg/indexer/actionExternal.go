@@ -19,6 +19,7 @@
 package indexer
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"regexp"
@@ -73,7 +74,7 @@ type ActionExternal struct {
 	mimetype   *regexp.Regexp
 }
 
-func (as *ActionExternal) DoV2(filename string) (*ResultV2, error) {
+func (as *ActionExternal) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -82,7 +83,7 @@ func (as *ActionExternal) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
-func (as *ActionExternal) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (as *ActionExternal) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
 	return nil, errors.New("external actions does not support streaming")
 }
 

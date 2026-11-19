@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"cmp"
+	"context"
 	"io"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ import (
 
 	"emperror.dev/errors"
 	iou "github.com/je4/utils/v2/pkg/io"
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 type ActionDispatcher struct {
@@ -88,8 +89,15 @@ func (ad *ActionDispatcher) GetActionNamesByCaps(caps ActionCapability) []string
 	return names
 }
 
+// Stream executes actions on the provided reader using context.Background().
+//
+// Deprecated: Use StreamContext instead to ensure proper cancellation and timeout handling.
 func (ad *ActionDispatcher) Stream(sourceReader io.Reader, stateFiles []string, actions []string) (*ResultV2, error) {
+	return ad.StreamContext(context.Background(), sourceReader, stateFiles, actions)
+}
 
+// StreamContext executes actions on the provided reader with context support.
+func (ad *ActionDispatcher) StreamContext(ctx context.Context, sourceReader io.Reader, stateFiles []string, actions []string) (*ResultV2, error) {
 	if len(stateFiles) == 0 {
 		stateFiles = []string{""}
 	}
@@ -118,7 +126,7 @@ func (ad *ActionDispatcher) Stream(sourceReader io.Reader, stateFiles []string, 
 				go func(actionReader io.Reader, a Action) {
 					defer wg.Done()
 					// stream to actions
-					result, err := a.Stream(contentType, actionReader, stateFiles[0])
+					result, err := a.Stream(ctx, contentType, actionReader, stateFiles[0])
 					if err != nil {
 						result = NewResultV2()
 						result.Errors[a.GetName()] = err.Error()
@@ -215,7 +223,15 @@ func (ad *ActionDispatcher) Stream(sourceReader io.Reader, stateFiles []string, 
 	return result, nil
 }
 
+// DoV2 executes actions on the provided file using context.Background().
+//
+// Deprecated: Use DoV2Context instead to ensure proper cancellation and timeout handling.
 func (ad *ActionDispatcher) DoV2(filename string, stateFiles []string, actions []string) (*ResultV2, error) {
+	return ad.DoV2Context(context.Background(), filename, stateFiles, actions)
+}
+
+// DoV2Context executes actions on the provided file with context support.
+func (ad *ActionDispatcher) DoV2Context(ctx context.Context, filename string, stateFiles []string, actions []string) (*ResultV2, error) {
 	if len(stateFiles) == 0 {
 		stateFiles = append(stateFiles, "")
 	}
@@ -252,7 +268,7 @@ func (ad *ActionDispatcher) DoV2(filename string, stateFiles []string, actions [
 					break
 				}
 				// stream to actions
-				result, err := action.DoV2(filename)
+				result, err := action.DoV2(ctx, filename)
 				if err != nil {
 					result = NewResultV2()
 					result.Errors[action.GetName()] = err.Error()

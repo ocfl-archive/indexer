@@ -1,6 +1,6 @@
 package indexer
 
-import "golang.org/x/exp/slices"
+import "slices"
 
 type ResultV2 struct {
 	Errors    map[string]string `json:"errors,omitempty"`
@@ -28,16 +28,52 @@ func NewResultV2() *ResultV2 {
 	}
 }
 
+// GetMetadata retrieves a typed metadata entry from ResultV2 safely.
+func GetMetadata[T any](r *ResultV2, key string) (T, bool) {
+	if r == nil || r.Metadata == nil {
+		var zero T
+		return zero, false
+	}
+	val, ok := r.Metadata[key]
+	if !ok {
+		var zero T
+		return zero, false
+	}
+	res, ok := val.(T)
+	return res, ok
+}
+
+// SetMetadata stores a typed metadata entry into ResultV2.
+func SetMetadata[T any](r *ResultV2, key string, val T) {
+	if r == nil {
+		return
+	}
+	if r.Metadata == nil {
+		r.Metadata = make(map[string]any)
+	}
+	r.Metadata[key] = val
+}
+
 func (v *ResultV2) Merge(r *ResultV2) {
 	if r == nil {
 		return
 	}
-	if r.Mimetypes != nil {
+	if len(r.Mimetypes) > 0 {
+		if cap(v.Mimetypes)-len(v.Mimetypes) < len(r.Mimetypes) {
+			newMimes := make([]string, len(v.Mimetypes), len(v.Mimetypes)+len(r.Mimetypes))
+			copy(newMimes, v.Mimetypes)
+			v.Mimetypes = newMimes
+		}
 		v.Mimetypes = append(v.Mimetypes, r.Mimetypes...)
 		slices.Sort(v.Mimetypes)
 		v.Mimetypes = slices.Compact(v.Mimetypes)
 	}
-	if r.Pronoms != nil {
+	if len(r.Pronoms) > 0 {
+		if cap(v.Pronoms)-len(v.Pronoms) < len(r.Pronoms) {
+			newPronoms := make([]string, len(v.Pronoms), len(v.Pronoms)+len(r.Pronoms))
+			copy(newPronoms, v.Pronoms)
+			v.Pronoms = newPronoms
+		}
 		v.Pronoms = append(v.Pronoms, r.Pronoms...)
 		slices.Sort(v.Pronoms)
 		v.Pronoms = slices.Compact(v.Pronoms)

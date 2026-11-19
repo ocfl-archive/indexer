@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"context"
 	"io"
 	"mime"
 	"net/http"
@@ -73,8 +74,11 @@ func (as *ActionJSON) GetName() string {
 	return as.name
 }
 
-func (as *ActionJSON) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
-	fields, err := ExtractJSONFields(reader)
+func (as *ActionJSON) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	fieldSet, err := ExtractJSONFieldSet(reader)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error extracting JSON fields")
 	}
@@ -83,7 +87,7 @@ func (as *ActionJSON) Stream(contentType string, reader io.Reader, filename stri
 	for _, format := range as.format {
 		match := true
 		for _, key := range format.MandatoryFields {
-			if !slices.Contains(fields, key) {
+			if !fieldSet.Contains(key) {
 				match = false
 				break
 			}
@@ -93,7 +97,7 @@ func (as *ActionJSON) Stream(contentType string, reader io.Reader, filename stri
 		}
 		var optionalCount int
 		for _, key := range format.OptionalFields {
-			if slices.Contains(fields, key) {
+			if fieldSet.Contains(key) {
 				optionalCount++
 				if optionalCount > format.NumOptionals {
 					break
@@ -118,12 +122,15 @@ func (as *ActionJSON) Stream(contentType string, reader io.Reader, filename stri
 	result.Pronoms = []string{foundFormat.Pronom}
 	result.Type = foundFormat.Type
 	result.Subtype = foundFormat.Subtype
-	result.Metadata[as.GetName()] = fields
+	result.Metadata[as.GetName()] = SortedElements(fieldSet)
 
 	return result, nil
 }
 
-func (as *ActionJSON) DoV2(filename string) (*ResultV2, error) {
+func (as *ActionJSON) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", filename)
@@ -140,7 +147,7 @@ func (as *ActionJSON) DoV2(filename string) (*ResultV2, error) {
 	if _, err := reader.Seek(0, io.SeekStart); err != nil {
 		return nil, errors.Wrapf(err, "cannot seek to start of file '%s'", filename)
 	}
-	return as.Stream(contentType, reader, filename)
+	return as.Stream(ctx, contentType, reader, filename)
 }
 
 var (

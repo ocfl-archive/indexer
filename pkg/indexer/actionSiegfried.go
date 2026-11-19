@@ -15,6 +15,7 @@ package indexer
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log"
 	"os"
@@ -86,7 +87,10 @@ func (as *ActionSiegfried) GetName() string {
 	return as.name
 }
 
-func (as *ActionSiegfried) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (as *ActionSiegfried) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	sf := as.sfPool.Get().(*siegfried.Siegfried)
 	if sf == nil {
 		return nil, errors.New("cannot get siegfried from pool")
@@ -123,7 +127,10 @@ func (as *ActionSiegfried) Stream(contentType string, reader io.Reader, filename
 	return result, nil
 }
 
-func (as *ActionSiegfried) DoV2(filename string) (*ResultV2, error) {
+func (as *ActionSiegfried) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", filename)

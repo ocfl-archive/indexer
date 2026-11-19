@@ -84,14 +84,14 @@ func (at *ActionTika) GetName() string {
 	return at.name
 }
 
-func (at *ActionTika) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (at *ActionTika) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
 	if !at.CanHandle(contentType, filename) {
 		return nil, nil
 	}
 	client := &http.Client{}
-	ctx, cancel := context.WithTimeout(context.Background(), at.timeout)
+	reqCtx, cancel := context.WithTimeout(ctx, at.timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, at.url, reader)
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPut, at.url, reader)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create tika request - %v", at.url)
 	}
@@ -150,16 +150,16 @@ func (at *ActionTika) Stream(contentType string, reader io.Reader, filename stri
 	return result, nil
 }
 
-func (at *ActionTika) DoV2(filename string) (*ResultV2, error) {
+func (at *ActionTika) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", filename)
 	}
 	defer reader.Close()
 	client := &http.Client{}
-	ctx, cancel := context.WithTimeout(context.Background(), at.timeout)
+	reqCtx, cancel := context.WithTimeout(ctx, at.timeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, at.url, reader)
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodPut, at.url, reader)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create tika request - %v", at.url)
 	}

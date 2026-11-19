@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 var regexIdentifyMime = regexp.MustCompile("^image/")
@@ -111,7 +111,7 @@ func (ai *ActionIdentifyV2) GetName() string {
 	return ai.name
 }
 
-func (ai *ActionIdentifyV2) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (ai *ActionIdentifyV2) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
 	if slices.Contains([]string{"audio", "video", "pdf"}, contentType) {
 		return nil, nil
 	}
@@ -134,10 +134,10 @@ func (ai *ActionIdentifyV2) Stream(contentType string, reader io.Reader, filenam
 
 	var out bytes.Buffer
 	out.Grow(1024 * 1024) // 1MB size
-	ctx, cancel := context.WithTimeout(context.Background(), ai.timeout)
+	cmdCtx, cancel := context.WithTimeout(ctx, ai.timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, cmdParts[0], cmdParts[1:]...)
+	cmd := exec.CommandContext(cmdCtx, cmdParts[0], cmdParts[1:]...)
 	cmd.Stdin = reader
 	cmd.Stdout = &out
 
@@ -197,7 +197,7 @@ func (ai *ActionIdentifyV2) Stream(contentType string, reader io.Reader, filenam
 	return result, nil
 }
 
-func (ai *ActionIdentifyV2) DoV2(filename string) (*ResultV2, error) {
+func (ai *ActionIdentifyV2) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	infile := filename
 	for re, t := range ai.extensionMap {
 		if re.MatchString(filename) {
@@ -214,10 +214,10 @@ func (ai *ActionIdentifyV2) DoV2(filename string) (*ResultV2, error) {
 
 	var out bytes.Buffer
 	out.Grow(1024 * 1024) // 1MB size
-	ctx, cancel := context.WithTimeout(context.Background(), ai.timeout)
+	cmdCtx, cancel := context.WithTimeout(ctx, ai.timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, cmdfile, cmdparam...)
+	cmd := exec.CommandContext(cmdCtx, cmdfile, cmdparam...)
 	cmd.Stdout = &out
 
 	if err := cmd.Run(); err != nil {

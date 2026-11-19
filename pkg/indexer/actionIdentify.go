@@ -15,6 +15,7 @@
 package indexer
 
 import (
+	"context"
 	"io"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ type ActionIdentify struct {
 	mimeMap  map[string]string
 }
 
-func (ai *ActionIdentify) DoV2(filename string) (*ResultV2, error) {
+func (ai *ActionIdentify) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -41,7 +42,7 @@ func (ai *ActionIdentify) CanHandle(contentType string, filename string) bool {
 	return regexIdentifyMime.MatchString(contentType)
 }
 
-func (ai *ActionIdentify) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (ai *ActionIdentify) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
 	return nil, errors.New("identify actions does not support streaming")
 }
 

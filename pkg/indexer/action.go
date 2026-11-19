@@ -14,6 +14,7 @@
 package indexer
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"regexp"
@@ -66,8 +67,8 @@ func (a *ActionCapability) UnmarshalText(text []byte) error {
 var ErrMimeNotApplicable = errors.New("mime type not applicable for actions")
 
 type Action interface {
-	Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error)
-	DoV2(filename string) (*ResultV2, error)
+	Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error)
+	DoV2(ctx context.Context, filename string) (*ResultV2, error)
 	CanHandle(contentType string, filename string) bool
 	//Do(uri *url.URL, contentType string, width *uint, height *uint, duration *time.Duration, checksums map[string]string) (interface{}, []string, []string, error)
 	GetName() string

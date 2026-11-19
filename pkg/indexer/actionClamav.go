@@ -14,6 +14,7 @@
 package indexer
 
 import (
+	"context"
 	"io"
 	"time"
 
@@ -35,7 +36,7 @@ type ActionClamAV struct {
 	caps    ActionCapability
 }
 
-func (ac *ActionClamAV) DoV2(filename string) (*ResultV2, error) {
+func (ac *ActionClamAV) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -44,7 +45,7 @@ func (ac *ActionClamAV) CanHandle(contentType string, filename string) bool {
 	return true
 }
 
-func (ac *ActionClamAV) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (ac *ActionClamAV) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
 	return nil, errors.New("clamav does not support streaming")
 }
 

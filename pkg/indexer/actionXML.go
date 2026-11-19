@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -94,7 +95,10 @@ func (as *ActionXML) getElement(elem string) map[string]ConfigXMLFormat {
 	}
 	return result
 }
-func (as *ActionXML) Stream(contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+func (as *ActionXML) Stream(ctx context.Context, contentType string, reader io.Reader, filename string) (*ResultV2, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	var result = NewResultV2()
 	result.Mimetypes = []string{"application/xml"}
 	result.Mimetype = "application/xml"
@@ -109,6 +113,9 @@ func (as *ActionXML) Stream(contentType string, reader io.Reader, filename strin
 	parser := xmlparser.NewXMLParser(br, elements...).ParseAttributesOnly(elements...)
 	var found bool
 	for xml := range parser.Stream() {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		if xml.Err != nil {
 			continue
 		}
@@ -162,13 +169,13 @@ func (as *ActionXML) Stream(contentType string, reader io.Reader, filename strin
 	return result, nil
 }
 
-func (as *ActionXML) DoV2(filename string) (*ResultV2, error) {
+func (as *ActionXML) DoV2(ctx context.Context, filename string) (*ResultV2, error) {
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", filename)
 	}
 	defer reader.Close()
-	return as.Stream("", reader, filename)
+	return as.Stream(ctx, "", reader, filename)
 }
 
 var (

@@ -14,6 +14,7 @@
 package indexer
 
 import (
+	"cmp"
 	"encoding/json/jsontext"
 	"fmt"
 	"io"
@@ -23,7 +24,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"slices"
 	"strings"
 
 	"emperror.dev/errors"
@@ -34,11 +34,9 @@ var _logformat = logging.MustStringFormatter(
 	`%{time:2006-01-02T15:04:05.000} %{module}::%{shortfunc} [%{shortfile}] > %{level:.5s} - %{message}`,
 )
 
-func Max(a, b int64) int64 {
-	if a > b {
-		return a
-	}
-	return b
+// Max returns the maximum of two ordered values.
+func Max[T cmp.Ordered](a, b T) T {
+	return max(a, b)
 }
 
 func CreateLogger(module string, logfile string, loglevel string) (log *logging.Logger, lf *os.File) {
@@ -129,27 +127,26 @@ func wildCardToRegexp(pattern string) string {
 	return "^" + result.String() + "$"
 }
 
-// ExtractJSONFields liest JSON aus r und gibt alle Feldnamen in Punkt-Notation zurück.
-// Performance: nutzt den streamingbasierten Token-Parser der encoding/json/jsontext-Stdlib
-// und vermeidet vollständiges Unmarshaling großer Dokumente.
-func ExtractJSONFields(r io.Reader) ([]string, error) {
+// ExtractJSONFieldSet reads JSON from r and returns all field names in slash notation as a Set[string].
+// Performance: streaming token parser using encoding/json/jsontext stdlib.
+func ExtractJSONFieldSet(r io.Reader) (Set[string], error) {
 	dec := jsontext.NewDecoder(r)
 
 	type frame struct {
 		kind     byte // 'o' object, 'a' array
-		appended bool // ob beim Öffnen ein Key zur Pfadliste hinzugefügt wurde
+		appended bool // whether opening added a key to the path list
 	}
 
-	fields := make(map[string]struct{}, 256)
+	fields := make(Set[string], 256)
 	var path []string
 	var stack []frame
 	var pendingKey string
 
 	joinPath := func(key string) string {
 		if len(path) == 0 {
-			return key
+			return strings.ToLower(key)
 		}
-		return strings.Join(path, "/") + "/" + key
+		return strings.ToLower(strings.Join(path, "/") + "/" + key)
 	}
 
 	for {
@@ -192,31 +189,34 @@ func ExtractJSONFields(r io.Reader) ([]string, error) {
 				stack = stack[:len(stack)-1]
 			}
 		case '"':
-			// Objekt-Key oder String-Wert?
+			// Object key or string value
 			if len(stack) > 0 && stack[len(stack)-1].kind == 'o' && pendingKey == "" {
-				// Key in Objekt
 				keyStr := tok.String()
 				name := joinPath(keyStr)
 				fields[name] = struct{}{}
 				pendingKey = keyStr
 			} else {
-				// String-Wert (kein Container)
 				if pendingKey != "" {
 					pendingKey = ""
 				}
 			}
 		default:
-			// Zahl, bool, null etc.
 			if pendingKey != "" {
 				pendingKey = ""
 			}
 		}
 	}
 
-	result := make([]string, 0, len(fields))
-	for k := range fields {
-		result = append(result, strings.ToLower(k))
+	return fields, nil
+}
+
+// ExtractJSONFields liest JSON aus r und gibt alle Feldnamen in Punkt-Notation zurück.
+// Performance: nutzt den streamingbasierten Token-Parser der encoding/json/jsontext-Stdlib
+// und vermeidet vollständiges Unmarshaling großer Dokumente.
+func ExtractJSONFields(r io.Reader) ([]string, error) {
+	set, err := ExtractJSONFieldSet(r)
+	if err != nil {
+		return nil, err
 	}
-	slices.Sort(result)
-	return result, nil
+	return SortedElements(set), nil
 }

@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -111,7 +112,7 @@ func TestActionJSON_Stream(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reader := strings.NewReader(tt.json)
-			result, err := aj.Stream("application/json", reader, "test.json")
+			result, err := aj.Stream(context.Background(), "application/json", reader, "test.json")
 
 			if tt.wantErr {
 				assert.Error(t, err)

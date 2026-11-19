@@ -29,6 +29,7 @@ require (
 require (
 	emperror.dev/emperror v0.33.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
+	github.com/VirusTotal/yara-x/go v1.23.0 // indirect
 	github.com/antchfx/xpath v1.3.0 // indirect
 	github.com/c4milo/gotoolkit v0.0.0-20190525173301-67483a18c17a // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

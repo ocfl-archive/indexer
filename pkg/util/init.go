@@ -120,6 +120,26 @@ func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Index
 		actions = append(actions, indexer.NameClamav)
 	}
 
+	if conf.YaraX.Enabled {
+		var rulesFiles []string
+		if len(conf.YaraX.RulesFiles) > 0 {
+			rulesFiles = append(rulesFiles, conf.YaraX.RulesFiles...)
+		}
+		if conf.YaraX.RulesFile != "" {
+			rulesFiles = append(rulesFiles, conf.YaraX.RulesFile)
+		}
+		ay, err := indexer.NewActionYaraXFromFiles(indexer.NameYaraX, rulesFiles, ad.ActionDispatcher(), conf.YaraX.FastScan, time.Duration(conf.YaraX.Timeout), conf.YaraX.MaxMatchesPerPattern)
+		if err != nil {
+			closer.Close()
+			return nil, nil, nil, errors.Wrap(err, "cannot initialize yara-x action")
+		}
+		if ay != nil {
+			closerList.AddCloser(ay)
+			logger.Info().Msg("indexer action yarax added")
+			actions = append(actions, indexer.NameYaraX)
+		}
+	}
+
 	if conf.NSRL.Enabled {
 		var nsrldb *badger.DB
 		if conf.NSRL.Enabled {

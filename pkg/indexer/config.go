@@ -33,7 +33,28 @@ const (
 	NameJSON      = "json"
 	NameClamav    = "clamav"
 	NameNSRL      = "nsrl"
+	NameYaraX     = "yarax"
 )
+
+// ConfigYaraX represents the configuration for YARA-X rule-based identification.
+type ConfigYaraX struct {
+	// Enabled indicates whether YARA-X scanning is active.
+	Enabled bool `toml:"enabled"`
+	// RulesFiles is a list of file paths or glob patterns to YARA-X rules files (.yar, .yrc).
+	RulesFiles []string `toml:"rulesfiles"`
+	// RulesFile is the path to a single YARA-X rules file (legacy / fallback).
+	RulesFile string `toml:"rulesfile"`
+	// Compiled indicates whether RulesFile contains pre-compiled rules (optional/deprecated: format is auto-detected from .yar/.yrc extension).
+	Compiled bool `toml:"compiled"`
+	// FastScan enables fast-scan mode (stops matching pattern after first hit).
+	FastScan bool `toml:"fastscan"`
+	// Timeout specifies the maximum duration for a scan.
+	Timeout config.Duration `toml:"timeout"`
+	// MaxMatchesPerPattern limits the maximum number of matches per pattern.
+	MaxMatchesPerPattern int `toml:"maxmatchesperpattern"`
+	// StreamSize sets the stream buffer limit.
+	StreamSize int `toml:"streamsize"`
+}
 
 // ConfigClamAV represents the configuration for ClamAV antivirus scanning.
 type ConfigClamAV struct {
@@ -289,6 +310,8 @@ type IndexerConfig struct {
 	NSRL ConfigNSRL `toml:"nsrl"`
 	// Clamav is the configuration for ClamAV antivirus scanning.
 	Clamav ConfigClamAV `toml:"clamav"`
+	// YaraX is the configuration for YARA-X scanning.
+	YaraX ConfigYaraX `toml:"yarax"`
 	// MimeRelevance is a map of MIME type relevance weights.
 	MimeRelevance map[string]ConfigMimeWeight `toml:"mimerelevance"`
 }

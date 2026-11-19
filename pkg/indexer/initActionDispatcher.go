@@ -96,6 +96,20 @@ func InitActionDispatcher(fss map[string]fs.FS, conf IndexerConfig, logger zLogg
 		_ = NewActionTika(NameFullText, conf.Tika.AddressFulltext, time.Duration(conf.Tika.Timeout), conf.Tika.RegexpMimeFulltext, conf.Tika.RegexpMimeFulltextNot, "X-TIKA:content", conf.Tika.Online, actionDispatcher)
 		logStartup(logger, NameFullText)
 	}
+	if conf.YaraX.Enabled {
+		var rulesFiles []string
+		if len(conf.YaraX.RulesFiles) > 0 {
+			rulesFiles = append(rulesFiles, conf.YaraX.RulesFiles...)
+		}
+		if conf.YaraX.RulesFile != "" {
+			rulesFiles = append(rulesFiles, conf.YaraX.RulesFile)
+		}
+		_, err = NewActionYaraXFromFiles(NameYaraX, rulesFiles, actionDispatcher, conf.YaraX.FastScan, time.Duration(conf.YaraX.Timeout), conf.YaraX.MaxMatchesPerPattern)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot initialize yara-x action")
+		}
+		logStartup(logger, NameYaraX)
+	}
 
 	return actionDispatcher, nil
 }

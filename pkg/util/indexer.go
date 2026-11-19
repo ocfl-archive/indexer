@@ -2,6 +2,7 @@
 package util
 
 import (
+	"context"
 	"io"
 	"io/fs"
 
@@ -22,6 +23,12 @@ func (idx *Indexer) ActionDispatcher() *indexer.ActionDispatcher {
 // Index reads a file from an fs.FS filesystem, calculates specified checksum digests,
 // and streams the content through configured actions simultaneously.
 func (idx *Indexer) Index(fsys fs.FS, path string, realname string, actions []string, digestAlgs []checksum.DigestAlgorithm, writer io.Writer, logger zLogger.ZLogger) (*indexer.ResultV2, map[checksum.DigestAlgorithm]string, error) {
+	return idx.IndexContext(context.Background(), fsys, path, realname, actions, digestAlgs, writer, logger)
+}
+
+// IndexContext reads a file from an fs.FS filesystem, calculates specified checksum digests,
+// and streams the content through configured actions simultaneously with context cancellation support.
+func (idx *Indexer) IndexContext(ctx context.Context, fsys fs.FS, path string, realname string, actions []string, digestAlgs []checksum.DigestAlgorithm, writer io.Writer, logger zLogger.ZLogger) (*indexer.ResultV2, map[checksum.DigestAlgorithm]string, error) {
 	if realname == "" {
 		realname = path
 	}
@@ -50,7 +57,7 @@ func (idx *Indexer) Index(fsys fs.FS, path string, realname string, actions []st
 			logger.Error().Err(err).Msg("cannot copy data")
 		}
 	}()
-	result, err := ad.Stream(idxRead, []string{realname}, actions)
+	result, err := ad.StreamContext(ctx, idxRead, []string{realname}, actions)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "cannot index '%s/%s'", fsys, path)
 	}

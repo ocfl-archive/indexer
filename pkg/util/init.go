@@ -125,9 +125,6 @@ func InitIndexer(conf *indexer.IndexerConfig, logger zLogger.ZLogger) (ad *Index
 		if len(conf.YaraX.RulesFiles) > 0 {
 			rulesFiles = append(rulesFiles, conf.YaraX.RulesFiles...)
 		}
-		if conf.YaraX.RulesFile != "" {
-			rulesFiles = append(rulesFiles, conf.YaraX.RulesFile)
-		}
 		ay, err := indexer.NewActionYaraXFromFiles(indexer.NameYaraX, rulesFiles, ad.ActionDispatcher(), conf.YaraX.FastScan, time.Duration(conf.YaraX.Timeout), conf.YaraX.MaxMatchesPerPattern)
 		if err != nil {
 			closer.Close()

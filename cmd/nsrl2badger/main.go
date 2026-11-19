@@ -17,7 +17,7 @@ import (
 	"archive/zip"
 	"emperror.dev/errors"
 	"encoding/csv"
-	"encoding/json"
+	json "encoding/json/v2"
 	"flag"
 	"fmt"
 	badger "github.com/dgraph-io/badger/v4"
@@ -238,7 +238,7 @@ func isoZip(isoFile, badgerFolder, fileFile, osFile, mfgFile, prodFile, checksum
 			for _, fi := range zipR.File {
 				fr, err := fi.Open()
 				if err != nil {
-					fmt.Printf("cannot open zip content %s/%s")
+					fmt.Printf("cannot open zip content %s/%s\n", f.Name(), fi.Name)
 				}
 				if err := copyCSV(strings.ToUpper(checksum), db, fr, []int{0, 1, 2}, checkonly); err != nil {
 					return errors.Wrapf(err, "cannot copy file csv %s", fi.Name)

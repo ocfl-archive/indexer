@@ -14,7 +14,7 @@
 package indexer
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 
 	"emperror.dev/errors"
 	badger "github.com/dgraph-io/badger/v4"

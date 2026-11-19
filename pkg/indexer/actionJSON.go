@@ -118,7 +118,7 @@ func (as *ActionJSON) Stream(contentType string, reader io.Reader, filename stri
 	result.Pronoms = []string{foundFormat.Pronom}
 	result.Type = foundFormat.Type
 	result.Subtype = foundFormat.Subtype
-	//result.Metadata[as.GetName()]
+	result.Metadata[as.GetName()] = fields
 
 	return result, nil
 }

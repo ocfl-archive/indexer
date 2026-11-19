@@ -14,7 +14,7 @@
 package indexer
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"io"
 	"mime"
@@ -130,10 +130,10 @@ func wildCardToRegexp(pattern string) string {
 }
 
 // ExtractJSONFields liest JSON aus r und gibt alle Feldnamen in Punkt-Notation zurück.
-// Performance: nutzt den streamingbasierten Token-Parser der encoding/json-Stdlib
+// Performance: nutzt den streamingbasierten Token-Parser der encoding/json/jsontext-Stdlib
 // und vermeidet vollständiges Unmarshaling großer Dokumente.
 func ExtractJSONFields(r io.Reader) ([]string, error) {
-	dec := json.NewDecoder(r)
+	dec := jsontext.NewDecoder(r)
 
 	type frame struct {
 		kind     byte // 'o' object, 'a' array
@@ -153,57 +153,52 @@ func ExtractJSONFields(r io.Reader) ([]string, error) {
 	}
 
 	for {
-		tok, err := dec.Token()
+		tok, err := dec.ReadToken()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return nil, errors.Wrap(err, "json token read failed")
 		}
-		if tok == nil {
-			break
-		}
-		switch t := tok.(type) {
-		case json.Delim:
-			switch t {
-			case '{':
-				app := false
-				if pendingKey != "" {
-					path = append(path, pendingKey)
-					pendingKey = ""
-					app = true
-				}
-				stack = append(stack, frame{kind: 'o', appended: app})
-			case '}':
-				if len(stack) > 0 {
-					if stack[len(stack)-1].appended && len(path) > 0 {
-						path = path[:len(path)-1]
-					}
-					stack = stack[:len(stack)-1]
-				}
-			case '[':
-				app := false
-				if pendingKey != "" {
-					path = append(path, pendingKey)
-					pendingKey = ""
-					app = true
-				}
-				stack = append(stack, frame{kind: 'a', appended: app})
-			case ']':
-				if len(stack) > 0 {
-					if stack[len(stack)-1].appended && len(path) > 0 {
-						path = path[:len(path)-1]
-					}
-					stack = stack[:len(stack)-1]
-				}
+		switch tok.Kind() {
+		case '{':
+			app := false
+			if pendingKey != "" {
+				path = append(path, pendingKey)
+				pendingKey = ""
+				app = true
 			}
-		case string:
+			stack = append(stack, frame{kind: 'o', appended: app})
+		case '}':
+			if len(stack) > 0 {
+				if stack[len(stack)-1].appended && len(path) > 0 {
+					path = path[:len(path)-1]
+				}
+				stack = stack[:len(stack)-1]
+			}
+		case '[':
+			app := false
+			if pendingKey != "" {
+				path = append(path, pendingKey)
+				pendingKey = ""
+				app = true
+			}
+			stack = append(stack, frame{kind: 'a', appended: app})
+		case ']':
+			if len(stack) > 0 {
+				if stack[len(stack)-1].appended && len(path) > 0 {
+					path = path[:len(path)-1]
+				}
+				stack = stack[:len(stack)-1]
+			}
+		case '"':
 			// Objekt-Key oder String-Wert?
 			if len(stack) > 0 && stack[len(stack)-1].kind == 'o' && pendingKey == "" {
 				// Key in Objekt
-				name := joinPath(t)
+				keyStr := tok.String()
+				name := joinPath(keyStr)
 				fields[name] = struct{}{}
-				pendingKey = t
+				pendingKey = keyStr
 			} else {
 				// String-Wert (kein Container)
 				if pendingKey != "" {

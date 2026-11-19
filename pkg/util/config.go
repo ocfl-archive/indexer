@@ -17,7 +17,7 @@ package util
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	json "encoding/json/v2"
 	"image"
 	"image/png"
 	"io"

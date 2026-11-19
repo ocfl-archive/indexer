@@ -101,9 +101,6 @@ func InitActionDispatcher(fss map[string]fs.FS, conf IndexerConfig, logger zLogg
 		if len(conf.YaraX.RulesFiles) > 0 {
 			rulesFiles = append(rulesFiles, conf.YaraX.RulesFiles...)
 		}
-		if conf.YaraX.RulesFile != "" {
-			rulesFiles = append(rulesFiles, conf.YaraX.RulesFile)
-		}
 		_, err = NewActionYaraXFromFiles(NameYaraX, rulesFiles, actionDispatcher, conf.YaraX.FastScan, time.Duration(conf.YaraX.Timeout), conf.YaraX.MaxMatchesPerPattern)
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot initialize yara-x action")

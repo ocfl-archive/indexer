@@ -42,8 +42,6 @@ type ConfigYaraX struct {
 	Enabled bool `toml:"enabled"`
 	// RulesFiles is a list of file paths or glob patterns to YARA-X rules files (.yar, .yrc).
 	RulesFiles []string `toml:"rulesfiles"`
-	// RulesFile is the path to a single YARA-X rules file (legacy / fallback).
-	RulesFile string `toml:"rulesfile"`
 	// Compiled indicates whether RulesFile contains pre-compiled rules (optional/deprecated: format is auto-detected from .yar/.yrc extension).
 	Compiled bool `toml:"compiled"`
 	// FastScan enables fast-scan mode (stops matching pattern after first hit).
